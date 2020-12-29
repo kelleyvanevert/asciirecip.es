@@ -1,0 +1,8 @@
+{
+  "name": "asciirecip.es",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "Kelley van Evert <hello@kelleyvanevert.nl>",
+  "license": "MIT",
+  "prettier": {}
+}
