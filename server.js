@@ -5,8 +5,6 @@ const matter = require("gray-matter");
 
 const app = express();
 
-app.use(express.static("public"));
-
 app.get("/", (req, res) => {
   fs.readFile(
     path.join(__dirname, "content", "home"),
@@ -35,11 +33,7 @@ app.get("/recipe/:slug", (req, res) => {
   );
 });
 
-const port = process.env.PORT || 9000;
-
-app.listen(port, () => {
-  console.log(`🎉 Server started, listening at http://localhost:${port}`);
-});
+module.exports = app;
 
 function render({ data: { title, links = [] }, content }) {
   for (const { text, to, color = "black" } of links) {
@@ -63,12 +57,12 @@ function render({ data: { title, links = [] }, content }) {
     <style>
     @font-face {
       font-family: "DejaVu Sans Mono";
-      src: local("DejaVu Sans Mono"), url("/DejaVuSansMono.ttf") format("ttf");
+      src: local("DejaVu Sans Mono"), url("/static/DejaVuSansMono.ttf") format("ttf");
       font-weight: normal;
     }
     @font-face {
       font-family: "DejaVu Sans Mono";
-      src: local("DejaVu Sans Mono Bold"), url("/DejaVuSansMono-Bold.ttf") format("ttf");
+      src: local("DejaVu Sans Mono Bold"), url("/static/DejaVuSansMono-Bold.ttf") format("ttf");
       font-weight: bold;
     }
     html, body, pre {

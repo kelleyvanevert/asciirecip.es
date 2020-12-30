@@ -5,10 +5,10 @@
   "author": "Kelley van Evert <hello@kelleyvanevert.nl>",
   "license": "MIT",
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js"
+    "start": "vercel dev"
   },
   "dependencies": {
+    "@vercel/node": "^1.8.5",
     "express": "^4.17.1",
     "gray-matter": "^4.0.2"
   },
