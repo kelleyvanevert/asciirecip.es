@@ -57,12 +57,12 @@ function render({ data: { title, links = [] }, content }) {
     <style>
     @font-face {
       font-family: "DejaVu Sans Mono";
-      src: local("DejaVu Sans Mono"), url("/static/DejaVuSansMono.ttf") format("ttf");
+      src: local("DejaVu Sans Mono"), url("/static/DejaVuSansMono.ttf") format("truetype");
       font-weight: normal;
     }
     @font-face {
       font-family: "DejaVu Sans Mono";
-      src: local("DejaVu Sans Mono Bold"), url("/static/DejaVuSansMono-Bold.ttf") format("ttf");
+      src: local("DejaVu Sans Mono Bold"), url("/static/DejaVuSansMono-Bold.ttf") format("truetype");
       font-weight: bold;
     }
     html, body, pre {
