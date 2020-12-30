@@ -1,0 +1,8 @@
+{
+  "[plaintext]": {
+    "editor.fontWeight": "bold",
+    "editor.fontFamily": "'DejaVu Sans Mono', Menlo, Monaco, 'Courier New', monospace",
+    "editor.fontSize": 12,
+    "editor.lineHeight": 15
+  }
+}
