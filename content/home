@@ -4,6 +4,9 @@ links:
   - text: "Gingerbread men"
     to: "/recipe/gingerbread_men"
     color: "#64443f"
+  - text: "Russian teacakes"
+    to: "/recipe/russian_teacakes"
+    color: "#c9c9c9"
 ---
 
 Hi!
@@ -11,3 +14,4 @@ Hi!
 More coming soon :)
  
   * Gingerbread men
+  * Russian teacakes

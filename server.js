@@ -71,6 +71,7 @@ function render({ data: { title, links = [] }, content }) {
       font-family: "DejaVu Sans Mono";
       font-size: 14px;
       line-height: 128%;
+      color: #333;
     }
     a {
       font-weight: bold;
@@ -78,10 +79,6 @@ function render({ data: { title, links = [] }, content }) {
       color: var(--color);
       margin: -2px;
       padding: 2px;
-    }
-    a:hover {
-      background: var(--color);
-      color: white;
     }
     </style>
   </head>
