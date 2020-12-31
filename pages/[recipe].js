@@ -5,8 +5,10 @@ export async function getServerSideProps({ res, params: { recipe: slug } }) {
   const node = await getRecipe(slug);
 
   if (!node) {
-    res.statusCode = 404;
-    // res.end();
+    return {
+      notFound: true,
+      props: {},
+    };
   }
 
   return {

@@ -4,11 +4,7 @@ import Link from "next/link";
 
 import { prepareFrames } from "../lib/morph/prepareFrames";
 
-export function MorphingLayout({ node }) {
-  if (!node) {
-    return <main>404</main>;
-  }
-
+export function MorphingLayout({ node = node404 }) {
   const [pieces, setPieces] = useState(formatContent(node));
 
   useEffectPrev(
@@ -132,3 +128,22 @@ function formatContent({ content, data: { links = [] } }) {
   }
   return pieces;
 }
+
+const node404 = {
+  data: {
+    title: "Not found",
+    links: [{ text: "« Home", to: "/" }],
+  },
+  content: `
+  « Home
+
+
+    ╭────────────────────────────╮  
+    │                            │  
+    │   Sorry, this page was     │  
+    │                            │  
+    │     :N O T    F O U N D:   │  
+    │                            │  
+    ╰────────────────────────────╯  
+`,
+};
