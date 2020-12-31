@@ -1,19 +1,21 @@
 {
   "name": "asciirecip.es",
+  "private": true,
   "version": "1.0.0",
   "main": "index.js",
   "author": "Kelley van Evert <hello@kelleyvanevert.nl>",
   "license": "MIT",
   "scripts": {
-    "start": "vercel dev"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
   },
   "dependencies": {
-    "@vercel/node": "^1.8.5",
-    "express": "^4.17.1",
-    "gray-matter": "^4.0.2"
-  },
-  "devDependencies": {
-    "nodemon": "^2.0.6"
+    "@kelleyvanevert/ascii-morph": "^0.0.1",
+    "gray-matter": "^4.0.2",
+    "next": "^10.0.0",
+    "react": "16.13.1",
+    "react-dom": "16.13.1"
   },
   "prettier": {}
 }
