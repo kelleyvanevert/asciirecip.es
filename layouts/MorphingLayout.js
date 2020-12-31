@@ -9,10 +9,12 @@ export function MorphingLayout({ node }) {
     return <main>404</main>;
   }
 
-  const [pieces, setPieces] = useState("");
+  const [pieces, setPieces] = useState(formatContent(node));
 
   useEffectPrev(
-    ([prevNode = { content: "" }]) => {
+    ([prevNode]) => {
+      if (!prevNode) return;
+
       let timely = true;
 
       const frames = prepareFrames(
