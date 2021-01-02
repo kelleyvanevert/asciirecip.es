@@ -13,11 +13,11 @@ links:
     to: "/tiramisu"
   - text: "Poppy seed cake"
     to: "/poppy_seed_cake"
+  - text: "Tim Holman's morphing effect"
+    to: "https://tholman.com/post/ascii-morph/"
 ---
 
 ASCII RECIPES
-
-(A little hobby project of Kelley's)
 
 
 
@@ -31,3 +31,20 @@ ASCII RECIPES
 
 
       ... more to come! ...
+
+
+
+
+
+
+
+
+
+
+────
+
+- A little hobby project of Kelley's
+
+- The use of transitioning effects was inspired by
+   Tim Holman's morphing effect (the one that
+   shrinks/expands the recipes)
