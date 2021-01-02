@@ -2,7 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import Head from "next/head";
 import Link from "next/link";
 
-import { prepareFrames } from "../lib/morph/prepareFrames";
+import { sandstorm, dissolve, asciiMorph } from "./morph_effects";
+
+const effects = [sandstorm, dissolve, asciiMorph];
 
 export function MorphingLayout({ node = node404 }) {
   const [pieces, setPieces] = useState(() => formatContent(node));
@@ -13,7 +15,9 @@ export function MorphingLayout({ node = node404 }) {
 
       let timely = true;
 
-      const frames = prepareFrames(
+      const randomEffect = effects[Math.floor(Math.random() * effects.length)];
+
+      const frames = randomEffect(
         prevNode.content.split("\n"),
         node.content.split("\n"),
         undefined,
