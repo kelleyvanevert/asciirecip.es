@@ -5,7 +5,7 @@ import Link from "next/link";
 import { prepareFrames } from "../lib/morph/prepareFrames";
 
 export function MorphingLayout({ node = node404 }) {
-  const [pieces, setPieces] = useState(formatContent(node));
+  const [pieces, setPieces] = useState(() => formatContent(node));
 
   useEffectPrev(
     ([prevNode]) => {
@@ -44,37 +44,6 @@ export function MorphingLayout({ node = node404 }) {
 
   return (
     <main>
-      <style jsx global>{`
-        @font-face {
-          font-family: "DejaVu Sans Mono";
-          src: local("DejaVu Sans Mono"),
-            url("/DejaVuSansMono.ttf") format("truetype");
-          font-weight: normal;
-        }
-        @font-face {
-          font-family: "DejaVu Sans Mono";
-          src: local("DejaVu Sans Mono Bold"),
-            url("/DejaVuSansMono-Bold.ttf") format("truetype");
-          font-weight: bold;
-        }
-        html,
-        body,
-        pre {
-          margin: 0;
-          padding: 0;
-          font-family: "DejaVu Sans Mono";
-          font-size: 14px;
-          line-height: 128%;
-          color: #333;
-        }
-        a {
-          font-weight: bold;
-          text-decoration: none;
-          color: var(--color);
-          margin: -2px;
-          padding: 2px;
-        }
-      `}</style>
       <pre>
         <Head>
           <title>{node.data.title}</title>

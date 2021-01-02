@@ -1,17 +1,30 @@
 ---
 title: "asciirecip.es"
 links:
+  - text: "ASCII RECIPES"
+    to: "/"
+  - text: "Kelley's"
+    to: "https://klve.nl"
   - text: "Gingerbread men"
     to: "/gingerbread_men"
-    color: "#64443f"
   - text: "Russian teacakes"
     to: "/russian_teacakes"
-    color: "#c9c9c9"
+  - text: "Tiramisu"
+    to: "/tiramisu"
 ---
 
-Hi!
+ASCII RECIPES
 
-More coming soon :)
- 
+(A little hobby project of Kelley's)
+
+
+
+  SWEET THINGS
+
   * Gingerbread men
   * Russian teacakes
+  * Tiramisu
+
+
+
+      ... more to come! ...
