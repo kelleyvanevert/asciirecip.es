@@ -11,6 +11,8 @@ links:
     to: "/russian_teacakes"
   - text: "Tiramisu"
     to: "/tiramisu"
+  - text: "Poppy seed cake"
+    to: "/poppy_seed_cake"
 ---
 
 ASCII RECIPES
@@ -24,6 +26,7 @@ ASCII RECIPES
   * Gingerbread men
   * Russian teacakes
   * Tiramisu
+  * Poppy seed cake
 
 
 
