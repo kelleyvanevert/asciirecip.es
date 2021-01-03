@@ -1,7 +1,7 @@
 import { getRecipe } from "../lib/recipes";
 import { MorphingLayout } from "../layouts/MorphingLayout";
 
-export async function getServerSideProps() {
+export async function getStaticProps() {
   return {
     props: {
       node: await getRecipe("_index"),

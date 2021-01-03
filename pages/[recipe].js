@@ -1,7 +1,7 @@
-import { getRecipe } from "../lib/recipes";
+import { getRecipe, getRecipeSlugs } from "../lib/recipes";
 import { MorphingLayout } from "../layouts/MorphingLayout";
 
-export async function getServerSideProps({ res, params: { recipe: slug } }) {
+export async function getStaticProps({ params: { recipe: slug } }) {
   const node = await getRecipe(slug);
 
   if (!node) {
@@ -15,6 +15,16 @@ export async function getServerSideProps({ res, params: { recipe: slug } }) {
     props: {
       node,
     },
+  };
+}
+
+export async function getStaticPaths() {
+  const slugs = await getRecipeSlugs();
+  const paths = slugs.map((slug) => "/" + slug);
+
+  return {
+    fallback: false,
+    paths,
   };
 }
 
