@@ -13,6 +13,8 @@ links:
     to: "/tiramisu"
   - text: "Poppy seed cake"
     to: "/poppy_seed_cake"
+  - text: "Spinach enshiladas"
+    to: "/spinach_enshiladas"
   - text: "Tim Holman's morphing effect"
     to: "https://tholman.com/post/ascii-morph/"
 ---
@@ -30,7 +32,9 @@ ASCII RECIPES
 
 
 
-      ... more to come! ...
+  SAVORY THINGS
+  * Spinach enshiladas
+  * Sophie's sweet potato tomato dish [TODO]
 
 
 
