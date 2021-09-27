@@ -15,6 +15,8 @@ links:
     to: "/poppy_seed_cake"
   - text: "Spinach enshiladas"
     to: "/spinach_enshiladas"
+  - text: "Pizza dough"
+    to: "/pizza_dough"
   - text: "Tim Holman's morphing effect"
     to: "https://tholman.com/post/ascii-morph/"
 ---
@@ -35,7 +37,7 @@ ASCII RECIPES
   SAVORY THINGS
   * Spinach enshiladas
   * Sophie's sweet potato tomato dish [TODO]
-
+  * Pizza dough
 
 
 
