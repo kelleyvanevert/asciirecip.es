@@ -1,13 +1,14 @@
 @font-face {
-  font-family: "DejaVu Sans Mono";
-  src: local("DejaVu Sans Mono"), url("/DejaVuSansMono.ttf") format("truetype");
+  font-family: "Fira Code";
+  src: local("Fira Code"), url("/fonts/FiraCode-Regular.ttf") format("truetype");
   font-weight: normal;
 }
+
 @font-face {
-  font-family: "DejaVu Sans Mono";
-  src: local("DejaVu Sans Mono Bold"),
-    url("/DejaVuSansMono-Bold.ttf") format("truetype");
-  font-weight: bold;
+  font-family: "Fira Code";
+  src: local("Fira Code SemiBold"),
+    url("/fonts/FiraCode-SemiBold.ttf") format("truetype");
+  font-weight: 600;
 }
 
 html,
@@ -15,16 +16,28 @@ body,
 pre {
   margin: 0;
   padding: 0;
-  font-family: "DejaVu Sans Mono";
-  font-size: 14px;
+  font-family: "Fira Code";
+  font-size: 18px;
   line-height: 124%;
   color: #333;
 }
 
 a {
-  font-weight: bold;
+  font-weight: 600;
   text-decoration: none;
-  color: var(--color);
+  color: black;
   margin: -2px;
   padding: 2px;
+}
+
+a:hover {
+  background-color: #eee;
+  outline-offset: -2px;
+  outline: 2px solid #ddd;
+}
+
+a:focus,
+a:active {
+  outline-offset: -2px;
+  outline: 2px solid black;
 }

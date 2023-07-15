@@ -1,8 +1,7 @@
 ---
 title: "Gingerbread men"
 links:
-  - text: "« Home"
-    to: "/"
+  "« Home": "/"
 ---
 
 « Home

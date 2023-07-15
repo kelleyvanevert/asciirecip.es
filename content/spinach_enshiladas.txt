@@ -1,8 +1,7 @@
 ---
 title: "Spinach enshiladas"
 links:
-  - text: "« Home"
-    to: "/"
+  "« Home": "/"
 ---
 
 « Home

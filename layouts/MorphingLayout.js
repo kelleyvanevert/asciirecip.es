@@ -6,7 +6,7 @@ import { sandstorm, dissolve, asciiMorph } from "./morph_effects";
 
 const effects = [sandstorm, dissolve, asciiMorph];
 
-export function MorphingLayout({ node = node404 }) {
+export function MorphingLayout({ node }) {
   const [pieces, setPieces] = useState(() => formatContent(node));
 
   useEffectPrev(
@@ -67,10 +67,10 @@ function useEffectPrev(effect, deps) {
   }, deps);
 }
 
-function formatContent({ content, data: { links = [] } }) {
+function formatContent({ content, data: { links = {} } }) {
   let pieces = [content];
 
-  for (const { text, to /*color = "black"*/ } of links) {
+  for (const [text, to] of Object.entries(links)) {
     const color = "black";
     let found;
     while (
@@ -92,31 +92,13 @@ function formatContent({ content, data: { links = [] } }) {
         i,
         1,
         piece.slice(0, j),
-        <Link href={to} passHref>
-          <a style={{ color }}>{text}</a>
+        <Link href={to} passHref style={{ color }}>
+          {text}
         </Link>,
         piece.slice(j + text.length)
       );
     }
   }
+
   return pieces;
 }
-
-const node404 = {
-  data: {
-    title: "Not found",
-    links: [{ text: "« Home", to: "/" }],
-  },
-  content: `
-  « Home
-
-
-    ╭────────────────────────────╮  
-    │                            │  
-    │   Sorry, this page was     │  
-    │                            │  
-    │     :N O T    F O U N D:   │  
-    │                            │  
-    ╰────────────────────────────╯  
-`,
-};

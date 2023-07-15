@@ -1,8 +1,7 @@
 ---
 title: "Russian teacakes"
 links:
-  - text: "« Home"
-    to: "/"
+  "« Home": "/"
 ---
 
 « Home

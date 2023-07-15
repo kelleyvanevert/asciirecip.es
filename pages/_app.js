@@ -6,7 +6,10 @@ export default function AsciiRecipesApp({ Component, pageProps }) {
   return (
     <>
       <Head>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1.0, minimum-scale=1.0"
+        />
         <link
           rel="apple-touch-icon"
           sizes="180x180"

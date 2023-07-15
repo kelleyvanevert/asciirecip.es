@@ -1,0 +1,47 @@
+---
+title: "asciirecip.es"
+links:
+  "ASCII RECIPES": "/"
+  "Kelley's": "https://klve.nl"
+  "Gingerbread men": "/gingerbread_men"
+  "Russian teacakes": "/russian_teacakes"
+  "Tiramisu": "/tiramisu"
+  "Poppy seed cake": "/poppy_seed_cake"
+  "Spinach enshiladas": "/spinach_enshiladas"
+  "Pizza dough": "/pizza_dough"
+  "Tim Holman's morphing effect": "https://tholman.com/post/ascii-morph/"
+---
+
+ASCII RECIPES
+
+
+
+  SWEET THINGS
+
+  * Gingerbread men
+  * Russian teacakes
+  * Tiramisu
+  * Poppy seed cake
+
+
+
+  SAVORY THINGS
+  * Spinach enshiladas
+  * Sophie's sweet potato tomato dish [TODO]
+  * Pizza dough
+
+
+
+
+
+
+
+
+
+────
+
+- A little hobby project of Kelley's
+
+- The use of transitioning effects was inspired by
+   Tim Holman's morphing effect (the one that
+   shrinks/expands the recipes)
