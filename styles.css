@@ -22,7 +22,7 @@ pre {
   color: #333;
 }
 
-a {
+.link {
   font-weight: 600;
   text-decoration: none;
   color: black;
@@ -30,14 +30,14 @@ a {
   padding: 2px;
 }
 
-a:hover {
+.link:hover {
   background-color: #eee;
   outline-offset: -2px;
   outline: 2px solid #ddd;
 }
 
-a:focus,
-a:active {
+.link:focus,
+.link:active {
   outline-offset: -2px;
   outline: 2px solid black;
 }

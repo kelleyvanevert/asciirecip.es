@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import Head from "next/head";
 import Link from "next/link";
 
@@ -6,12 +6,29 @@ import { sandstorm, dissolve, asciiMorph } from "./morph_effects";
 
 const effects = [sandstorm, dissolve, asciiMorph];
 
-export function MorphingLayout({ node }) {
-  const [pieces, setPieces] = useState(() => formatContent(node));
+export function MorphingLayout(props) {
+  const initialNodeId = useRef(props.node.id);
+  const [node, setNode] = useState(props.node);
+
+  // an extra rerender, only if on the editor page, so that client-side local content is added
+  useEffect(() => {
+    setNode(mergeEditingContent(props.node));
+  }, [props.node]);
+
+  const [pieces, setPieces] = useState(() => formatContent(node, false));
 
   useEffectPrev(
     ([prevNode]) => {
       if (!prevNode) return;
+
+      // (a bit of a hack, but:)
+      // we want to hide the initial client-side content load
+      if (node.editor && initialNodeId.current === node.id) {
+        setPieces(formatContent(node, true));
+        // ..but only the first time ;)
+        delete initialNodeId.current;
+        return;
+      }
 
       let timely = true;
 
@@ -30,7 +47,7 @@ export function MorphingLayout({ node }) {
         if (!timely) return;
 
         if (frames.length === 0) {
-          setPieces(formatContent(node));
+          setPieces(formatContent(node, true));
         } else {
           const frame = frames.shift();
           setPieces(frame.join("\n"));
@@ -48,11 +65,16 @@ export function MorphingLayout({ node }) {
 
   return (
     <main>
-      <pre>
-        <Head>
-          <title>{node.data.title}</title>
-        </Head>
-        {pieces}
+      <Head>
+        <title>{node.data.title}</title>
+      </Head>
+
+      <pre style={{ margin: 20 }}>
+        {typeof pieces === "string"
+          ? pieces
+          : Array.isArray(pieces)
+          ? pieces.map((piece, i) => <Fragment key={i}>{piece}</Fragment>)
+          : null}
       </pre>
     </main>
   );
@@ -67,8 +89,46 @@ function useEffectPrev(effect, deps) {
   }, deps);
 }
 
-function formatContent({ content, data: { links = {} } }) {
+function formatContent(
+  { content, data: { title, links = {} }, editor = false },
+  isClientSide
+) {
+  if (editor && isClientSide) {
+    //
+  }
+
   let pieces = [content];
+
+  links["« Home"] = "/";
+
+  const editorFns = {
+    getRecipeContent() {
+      return `---
+title: "My yummy recipe"
+---
+${content.split("\n").slice(6).join("\n")}`;
+    },
+    copy() {
+      const c = editorFns.getRecipeContent();
+      console.log("Copied:");
+      console.log(c);
+      navigator.clipboard.writeText(c);
+    },
+    export() {
+      const fileName = "recipe.txt";
+      const fileContent = editorFns.getRecipeContent();
+      const recipeFile = new Blob([fileContent], { type: "text/plain" });
+
+      window.URL = window.URL || window.webkitURL;
+      const btn = document.getElementById("export");
+
+      btn.setAttribute("href", window.URL.createObjectURL(recipeFile));
+      btn.setAttribute("download", fileName);
+
+      btn.click();
+    },
+    exit() {},
+  };
 
   for (const [text, to] of Object.entries(links)) {
     const color = "black";
@@ -80,7 +140,6 @@ function formatContent({ content, data: { links = {} } }) {
 
           let j = piece.indexOf(text);
           if (j >= 0) {
-            // console.log("promising", i, j, piece);
             return [i, j];
           }
         })
@@ -92,13 +151,65 @@ function formatContent({ content, data: { links = {} } }) {
         i,
         1,
         piece.slice(0, j),
-        <Link href={to} passHref style={{ color }}>
-          {text}
-        </Link>,
+        to.startsWith("@") ? (
+          <a
+            href="#"
+            className="link"
+            style={{ color }}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              editorFns[to.slice(1)]?.();
+            }}
+          >
+            {text}
+          </a>
+        ) : (
+          <Link className="link" href={to} passHref style={{ color }}>
+            {text}
+          </Link>
+        ),
         piece.slice(j + text.length)
       );
     }
   }
 
   return pieces;
+}
+
+const EDITOR_DIVIDER = "==== ⇩ edit below this line ⇩ ============";
+
+function getEditingContent() {
+  if (localStorage.asciiEditorState) {
+    try {
+      return JSON.parse(localStorage.asciiEditorState);
+    } catch {}
+  }
+
+  return {
+    title: "My yummy recipe",
+    content: "This is an example recipe:\n\n   Bla bla bla",
+  };
+}
+
+function saveEditingContent(data) {
+  localStorage.asciiEditorState = JSON.stringify(data);
+}
+
+function mergeEditingContent(node) {
+  if (node.editor) {
+    const [editorContent] = node.content.split(EDITOR_DIVIDER);
+    const { title, content } = getEditingContent();
+
+    return {
+      ...node,
+      content:
+        editorContent.replace(/^Title: (.*)/m, "Title: " + title) +
+        EDITOR_DIVIDER +
+        "\n\n" +
+        content,
+    };
+  }
+
+  return node;
 }

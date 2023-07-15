@@ -1,0 +1,12 @@
+---
+title: "Recipe editor"
+links:
+  "⧉ copy": "@copy"
+  "↓ export": "@export"
+  "✕ exit": "/"
+---
+
+Recipe editor!      ⧉ copy   ↓ export   ✕ exit
+Title: [My yummy recipe]
+
+==== ⇩ edit below this line ⇩ ============

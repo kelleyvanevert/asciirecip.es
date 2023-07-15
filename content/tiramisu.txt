@@ -1,7 +1,5 @@
 ---
 title: "Tiramisu"
-links:
-  "« Home": "/"
 ---
 
 « Home

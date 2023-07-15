@@ -1,7 +1,5 @@
 ---
 title: "Gingerbread men"
-links:
-  "« Home": "/"
 ---
 
 « Home

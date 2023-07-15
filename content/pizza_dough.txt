@@ -1,7 +1,5 @@
 ---
 title: "Pizza dough"
-links:
-  "« Home": "/"
 ---
 
 « Home
