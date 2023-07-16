@@ -30,7 +30,12 @@ export function RecipeEditor({ recipeContent }) {
 
     cleanup.push(
       onEvent(window, "keydown", (e) => {
-        if (e.key === "Backspace") {
+        if (
+          (e.key === "z" || e.key === "c" || e.key === "v") &&
+          (e.ctrlKey || e.metaKey)
+        ) {
+          // noop
+        } else if (e.key === "Backspace") {
           const c = getCaret();
           if (typeof c.start === "number") {
             const len = c.end - c.start + 1;
