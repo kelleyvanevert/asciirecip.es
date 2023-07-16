@@ -3,6 +3,7 @@ import Head from "next/head";
 import Link from "next/link";
 
 import { sandstorm, dissolve, asciiMorph } from "./morph_effects";
+import { RecipeEditor } from "./RecipeEditor";
 
 const effects = [sandstorm, dissolve, asciiMorph];
 
@@ -12,7 +13,7 @@ export function MorphingLayout(props) {
 
   // an extra rerender, only if on the editor page, so that client-side local content is added
   useEffect(() => {
-    setNode(mergeEditingContent(props.node));
+    setNode(mergeLocalEditorStateIntoNodeContent(props.node));
   }, [props.node]);
 
   const [pieces, setPieces] = useState(() => formatContent(node, false));
@@ -69,7 +70,7 @@ export function MorphingLayout(props) {
         <title>{node.data.title}</title>
       </Head>
 
-      <pre style={{ margin: 20 }}>
+      <pre style={{ margin: 20, position: "relative" }}>
         {typeof pieces === "string"
           ? pieces
           : Array.isArray(pieces)
@@ -93,8 +94,18 @@ function formatContent(
   { content, data: { title, links = {} }, editor = false },
   isClientSide
 ) {
+  let editorPieces;
+
   if (editor && isClientSide) {
-    //
+    const [editorContent, recipeContent] = content.split(EDITOR_DIVIDER);
+    content = editorContent + EDITOR_DIVIDER;
+    editorPieces = [
+      "\n\n",
+      <RecipeEditor recipeContent={recipeContent.replace(/^\n*/, "")} />,
+      <a id="export" style={{ display: "none" }}>
+        Export
+      </a>,
+    ];
   }
 
   let pieces = [content];
@@ -104,9 +115,14 @@ function formatContent(
   const editorFns = {
     getRecipeContent() {
       return `---
-title: "My yummy recipe"
+title: "${title}"
 ---
-${content.split("\n").slice(6).join("\n")}`;
+${content
+  .split("\n")
+  .slice(6)
+  .map((line) => line.trimEnd())
+  .join("\n")
+  .trimEnd()}`;
     },
     copy() {
       const c = editorFns.getRecipeContent();
@@ -174,12 +190,16 @@ ${content.split("\n").slice(6).join("\n")}`;
     }
   }
 
+  if (editorPieces) {
+    pieces.push(...editorPieces);
+  }
+
   return pieces;
 }
 
 const EDITOR_DIVIDER = "==== ⇩ edit below this line ⇩ ============";
 
-function getEditingContent() {
+function loadEditorState() {
   if (localStorage.asciiEditorState) {
     try {
       return JSON.parse(localStorage.asciiEditorState);
@@ -192,14 +212,14 @@ function getEditingContent() {
   };
 }
 
-function saveEditingContent(data) {
+export function saveEditorState(data) {
   localStorage.asciiEditorState = JSON.stringify(data);
 }
 
-function mergeEditingContent(node) {
+function mergeLocalEditorStateIntoNodeContent(node) {
   if (node.editor) {
     const [editorContent] = node.content.split(EDITOR_DIVIDER);
-    const { title, content } = getEditingContent();
+    const { title, content } = loadEditorState();
 
     return {
       ...node,

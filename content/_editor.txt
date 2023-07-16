@@ -7,6 +7,9 @@ links:
 ---
 
 Recipe editor!      ⧉ copy   ↓ export   ✕ exit
-Title: [My yummy recipe]
+Title: [........]
+Hold Ctrl (or Cmd) to draw boxes — add Shift to erase
 
 ==== ⇩ edit below this line ⇩ ============
+
+  (Loading...)
