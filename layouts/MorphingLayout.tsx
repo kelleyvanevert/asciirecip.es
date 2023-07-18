@@ -20,6 +20,7 @@ import {
   selectionTopLeft,
   getSelectionBounds,
   clearSelection,
+  drawBoxCharAt,
 } from "../lib/text";
 
 const effects = [sandstorm, dissolve, asciiMorph];
@@ -39,7 +40,9 @@ export function MorphingLayout(props: Props) {
   const [page, setPage] = useState(props.page);
 
   const [transitioning, setTransitioning] = useState<{ content: string }>();
-  const isMouseDown = useRef(false);
+  const isSelecting = useRef(false);
+  const [altDown, setAltDown] = useState(false);
+  const isDrawingBoxes = useRef(false);
   const [selection, setSelection] = useState<Selection>();
   const [caret, setCaret] = useState<Caret>();
 
@@ -183,12 +186,27 @@ export function MorphingLayout(props: Props) {
           }
           break;
         }
+        case "Alt": {
+          setAltDown(true);
+          break;
+        }
         // default: {
         //   console.log(e.key);
         // }
       }
     });
-  }, [caret, moveCaret, selection, setCaret, setSelection]);
+  }, [caret, moveCaret, selection, setCaret, setSelection, setAltDown]);
+
+  useEffect(() => {
+    return onEvent(window, "keyup", (e) => {
+      switch (e.key) {
+        case "Alt": {
+          setAltDown(false);
+          break;
+        }
+      }
+    });
+  }, [setAltDown]);
 
   useEffect(() => {
     return onEvent(window, "keypress", (e) => {
@@ -250,6 +268,15 @@ export function MorphingLayout(props: Props) {
     });
   }, [makeEdit, caret, setCaret, setSelection]);
 
+  const drawBoxChar = useCallback(
+    (caret: Caret, clear: boolean) => {
+      makeEdit((content) => {
+        return drawBoxCharAt(content.split("\n"), caret, clear).join("\n");
+      });
+    },
+    [makeEdit]
+  );
+
   return (
     <main
       style={{
@@ -271,37 +298,57 @@ export function MorphingLayout(props: Props) {
           flexGrow: 1,
           position: "relative",
           lineHeight: `${CH}px`,
-          cursor: "text",
+          cursor: altDown ? "crosshair" : "text",
         }}
         onMouseDown={(e) => {
           const caret = getCaretPos(e);
-          setSelection({ start: caret, end: caret });
-          isMouseDown.current = true;
+          if (e.altKey) {
+            isDrawingBoxes.current = true;
+            setSelection(undefined);
+            setCaret(undefined);
+            drawBoxChar(caret, e.shiftKey);
+            e.stopPropagation();
+          } else {
+            setSelection({ start: caret, end: caret });
+            isSelecting.current = true;
+            e.stopPropagation();
+          }
         }}
         onMouseMove={(e) => {
-          if (!isMouseDown.current) return;
+          const caret = getCaretPos(e);
+          if (isDrawingBoxes.current) {
+            drawBoxChar(caret, e.shiftKey);
+            e.stopPropagation();
+          } else if (isSelecting.current) {
+            setSelection((curr) => {
+              if (!curr) return;
 
-          setSelection((curr) => {
-            if (!curr) return;
-
-            return {
-              start: curr.start,
-              end: getCaretPos(e),
-            };
-          });
+              return {
+                start: curr.start,
+                end: caret,
+              };
+            });
+            e.stopPropagation();
+          }
         }}
         onMouseUp={(e) => {
-          isMouseDown.current = false;
-          const caret = getCaretPos(e);
-          setCaret(caret);
-          setSelection((curr) => {
-            if (!curr) return;
+          if (isDrawingBoxes.current) {
+            isDrawingBoxes.current = false;
+            e.stopPropagation();
+          } else if (isSelecting.current) {
+            isSelecting.current = false;
+            const caret = getCaretPos(e);
+            setCaret(caret);
+            setSelection((curr) => {
+              if (!curr) return;
 
-            return {
-              start: curr.start,
-              end: caret,
-            };
-          });
+              return {
+                start: curr.start,
+                end: caret,
+              };
+            });
+            e.stopPropagation();
+          }
         }}
       >
         {caret && (
@@ -363,22 +410,22 @@ export function MorphingLayout(props: Props) {
 }
 
 function LinkEl({ to = "", text = "" }) {
-  const isMouseDown = useRef(false);
+  const isClicking = useRef(false);
 
   return (
     <Link
       className="link"
       href={to}
       onMouseDown={(e) => {
-        isMouseDown.current = true;
+        isClicking.current = true;
         e.stopPropagation();
       }}
       onMouseUp={(e) => {
-        if (isMouseDown.current) {
+        if (isClicking.current) {
           // selection can end here, in which case the propagation is alright, but don't propagate a click-event mouse-up
           e.stopPropagation();
         }
-        isMouseDown.current = false;
+        isClicking.current = false;
       }}
     >
       {text}
