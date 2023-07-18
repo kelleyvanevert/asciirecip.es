@@ -73,8 +73,13 @@ export function pasteAt(lines: string[], caret: Caret, paste: string[]) {
 }
 
 export function drawBoxCharAt(lines: string[], caret: Caret, clear: boolean) {
-  lines = setCharAt(lines, caret, clear ? " " : box);
+  if (clear && isBoxChar(getCharAt(lines, caret))) {
+    lines = setCharAt(lines, caret, " ");
+  } else if (!clear) {
+    lines = setCharAt(lines, caret, clear ? " " : box);
+  }
 
+  // connect or correct surrounding boxes
   for (const p of [...neighbors(caret), caret]) {
     const curr = getCharAt(lines, p, " ");
     if (isBoxChar(curr)) {

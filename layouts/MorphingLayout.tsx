@@ -22,6 +22,7 @@ import {
   clearSelection,
   drawBoxCharAt,
 } from "../lib/text";
+import { useKeyPressed } from "../lib/useKeyPressed";
 
 const effects = [sandstorm, dissolve, asciiMorph];
 
@@ -41,10 +42,12 @@ export function MorphingLayout(props: Props) {
 
   const [transitioning, setTransitioning] = useState<{ content: string }>();
   const isSelecting = useRef(false);
-  const [altDown, setAltDown] = useState(false);
   const isDrawingBoxes = useRef(false);
   const [selection, setSelection] = useState<Selection>();
   const [caret, setCaret] = useState<Caret>();
+
+  const altPressed = useKeyPressed("Alt");
+  const shiftPressed = useKeyPressed("Shift");
 
   const makeEdit = useCallback(
     (edit: (content: string) => string) => {
@@ -131,6 +134,17 @@ export function MorphingLayout(props: Props) {
     [setSelection, setCaret, maxCol, maxRow]
   );
 
+  const doClearSelection = useCallback(
+    (selection: Selection) => {
+      setCaret(selectionTopLeft(selection));
+      setSelection(undefined);
+      makeEdit((content) => {
+        return clearSelection(content.split("\n"), selection).join("\n");
+      });
+    },
+    [setCaret, setSelection, makeEdit]
+  );
+
   useEffect(() => {
     return onEvent(window, "keydown", (e) => {
       switch (e.key) {
@@ -168,11 +182,7 @@ export function MorphingLayout(props: Props) {
         }
         case "Backspace": {
           if (selection) {
-            setCaret(selectionTopLeft(selection));
-            setSelection(undefined);
-            makeEdit((content) => {
-              return clearSelection(content.split("\n"), selection).join("\n");
-            });
+            doClearSelection(selection);
             e.preventDefault();
             e.stopPropagation();
           } else if (caret) {
@@ -186,27 +196,12 @@ export function MorphingLayout(props: Props) {
           }
           break;
         }
-        case "Alt": {
-          setAltDown(true);
-          break;
-        }
         // default: {
         //   console.log(e.key);
         // }
       }
     });
-  }, [caret, moveCaret, selection, setCaret, setSelection, setAltDown]);
-
-  useEffect(() => {
-    return onEvent(window, "keyup", (e) => {
-      switch (e.key) {
-        case "Alt": {
-          setAltDown(false);
-          break;
-        }
-      }
-    });
-  }, [setAltDown]);
+  }, [caret, moveCaret, selection, setCaret, setSelection, doClearSelection]);
 
   useEffect(() => {
     return onEvent(window, "keypress", (e) => {
@@ -231,11 +226,12 @@ export function MorphingLayout(props: Props) {
   }, [selection]);
 
   useEffect(() => {
-    const handler = (e: ClipboardEvent) => {
-      if (!selectionBounds) return;
-      const { top, left, height, width } = selectionBounds;
-      if (width === 0 || height === 0) return;
+    const copyText = (e: ClipboardEvent) => {
+      if (!selection) {
+        return;
+      }
 
+      const { top, left, height, width } = getSelectionBounds(selection);
       const textToCopy = lines
         .slice(top, top + height)
         .map((line) => line.padEnd(left + width, " ").slice(left, left + width))
@@ -243,13 +239,21 @@ export function MorphingLayout(props: Props) {
 
       e.clipboardData!.setData("text/plain", textToCopy);
       e.preventDefault();
+      return;
     };
 
     return callEach([
-      onEvent(window, "copy", handler),
-      onEvent(window, "copy", handler),
+      onEvent(window, "copy", (e) => {
+        copyText(e);
+      }),
+      onEvent(window, "cut", (e) => {
+        copyText(e);
+        if (selection) {
+          doClearSelection(selection);
+        }
+      }),
     ]);
-  }, [selectionBounds, lines]);
+  }, [selection, lines]);
 
   useEffect(() => {
     return onEvent(window, "paste", (e) => {
@@ -298,7 +302,7 @@ export function MorphingLayout(props: Props) {
           flexGrow: 1,
           position: "relative",
           lineHeight: `${CH}px`,
-          cursor: altDown ? "crosshair" : "text",
+          cursor: altPressed ? (shiftPressed ? "not-allowed" : "cell") : "text",
         }}
         onMouseDown={(e) => {
           const caret = getCaretPos(e);
