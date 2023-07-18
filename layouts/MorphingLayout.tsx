@@ -12,6 +12,15 @@ import Link from "next/link";
 import { sandstorm, dissolve, asciiMorph } from "./morph_effects";
 import { Page } from "../lib/recipes";
 import { callEach, onEvent } from "../lib/onEvent";
+import {
+  Caret,
+  Selection,
+  pasteAt,
+  setCharAt,
+  selectionTopLeft,
+  getSelectionBounds,
+  clearSelection,
+} from "../lib/text";
 
 const effects = [sandstorm, dissolve, asciiMorph];
 
@@ -24,54 +33,44 @@ type Props = {
   page: Page;
 };
 
-type Caret = {
-  r: number;
-  c: number;
-};
-
-type Selection = {
-  start: Caret;
-  end: Caret;
-};
-
-type SelectionPart = {
-  r: number;
-  c: [number, number];
-};
-
-export function MorphingLayout({ page }: Props) {
+export function MorphingLayout(props: Props) {
   const ref = useRef<HTMLPreElement>(null);
+
+  const [page, setPage] = useState(props.page);
 
   const [transitioning, setTransitioning] = useState<{ content: string }>();
   const isMouseDown = useRef(false);
   const [selection, setSelection] = useState<Selection>();
   const [caret, setCaret] = useState<Caret>();
 
-  const [editStore, setEditStore] = useState<
-    Record<
-      string,
-      {
-        content: string;
-      }
-    >
-  >({});
+  const makeEdit = useCallback(
+    (edit: (content: string) => string) => {
+      setPage((page) => {
+        return {
+          ...page,
+          content: edit(page.content),
+        };
+      });
+    },
+    [setPage]
+  );
 
-  const content = editStore[page.slug]?.content ?? page.content;
+  const content = page.content;
 
   useEffectPrev(
-    ([prevContent]: [string]) => {
+    ([prevPage]: [Page]) => {
       let timely = true;
 
-      setCaret(undefined);
-      setSelection(undefined);
+      if (prevPage && prevPage.slug !== props.page.slug) {
+        setCaret(undefined);
+        setSelection(undefined);
 
-      if (prevContent) {
         const randomEffect =
           effects[Math.floor(Math.random() * effects.length)];
 
         const frames = randomEffect(
-          prevContent.split("\n"),
-          content.split("\n")
+          prevPage.content.split("\n"),
+          props.page.content.split("\n")
         );
 
         const ms = 500 / frames.length;
@@ -81,6 +80,7 @@ export function MorphingLayout({ page }: Props) {
 
           if (frames.length === 0) {
             setTransitioning(undefined);
+            setPage(props.page);
           } else {
             const frame = frames.shift();
             setTransitioning({ content: frame.join("\n") });
@@ -95,24 +95,18 @@ export function MorphingLayout({ page }: Props) {
         timely = false;
       };
     },
-    [content, setCaret, setSelection, setTransitioning]
+    [props.page, setPage, setCaret, setSelection, setTransitioning]
   );
 
-  const lines = content.split("\n");
+  const lines = useMemo(() => content.split("\n"), [content]);
   const longest = Math.max(...lines.map((line) => line.length));
   const maxCol = longest - 1;
   const maxRow = lines.length - 1;
 
   const getCaretPos = (e: { clientX: number; clientY: number }): Caret => {
-    const rect = ref.current.getBoundingClientRect();
-    const c = Math.min(
-      maxCol,
-      Math.max(0, Math.round((e.clientX - rect.x - pad) / CW))
-    );
-    const r = Math.min(
-      maxRow,
-      Math.max(0, Math.floor((e.clientY - rect.y - pad) / CH))
-    );
+    const rect = ref.current!.getBoundingClientRect();
+    const c = Math.max(0, Math.round((e.clientX - rect.x - pad) / CW));
+    const r = Math.max(0, Math.floor((e.clientY - rect.y - pad) / CH));
     return { c, r };
   };
 
@@ -126,8 +120,8 @@ export function MorphingLayout({ page }: Props) {
 
         const { c, r } = update(caret);
         return {
-          c: Math.max(0, Math.min(maxCol, c)),
-          r: Math.max(0, Math.min(maxRow, r)),
+          c: Math.max(0, c),
+          r: Math.max(0, r),
         };
       });
     },
@@ -169,14 +163,59 @@ export function MorphingLayout({ page }: Props) {
           e.stopPropagation();
           break;
         }
+        case "Backspace": {
+          if (selection) {
+            setCaret(selectionTopLeft(selection));
+            setSelection(undefined);
+            makeEdit((content) => {
+              return clearSelection(content.split("\n"), selection).join("\n");
+            });
+            e.preventDefault();
+            e.stopPropagation();
+          }
+          break;
+        }
+        // default: {
+        //   console.log(e.key);
+        // }
       }
     });
-  }, [moveCaret]);
+  }, [moveCaret, selection, setCaret, setSelection]);
+
+  useEffect(() => {
+    return onEvent(window, "keypress", (e) => {
+      const writeAt = selection ? selectionTopLeft(selection) : caret;
+      if (writeAt) {
+        makeEdit((content) => {
+          return setCharAt(content.split("\n"), writeAt, e.key).join("\n");
+        });
+        moveCaret((c) => {
+          return { c: writeAt.c + 1, r: writeAt.r };
+        });
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    });
+  }, [makeEdit, caret, selection]);
+
+  const selectionBounds = useMemo(() => {
+    if (selection) {
+      return getSelectionBounds(selection);
+    }
+  }, [selection]);
 
   useEffect(() => {
     const handler = (e: ClipboardEvent) => {
-      console.log("copied", e.clipboardData);
-      e.clipboardData.setData("text/plain", "sdf");
+      if (!selectionBounds) return;
+      const { top, left, height, width } = selectionBounds;
+      if (width === 0 || height === 0) return;
+
+      const textToCopy = lines
+        .slice(top, top + height)
+        .map((line) => line.padEnd(left + width, " ").slice(left, left + width))
+        .join("\n");
+
+      e.clipboardData!.setData("text/plain", textToCopy);
       e.preventDefault();
     };
 
@@ -184,51 +223,24 @@ export function MorphingLayout({ page }: Props) {
       onEvent(window, "copy", handler),
       onEvent(window, "copy", handler),
     ]);
-  }, [selection]);
+  }, [selectionBounds, lines]);
 
-  const selectionParts = useMemo((): undefined | SelectionPart[] => {
-    if (!selection) {
-      return;
-    }
-
-    if (selection.start.r < selection.end.r) {
-      return range(selection.start.r, selection.end.r + 1).map((r) => {
-        return {
-          r,
-          c:
-            r === selection.start.r
-              ? [selection.start.c, maxCol + 1]
-              : r < selection.end.r
-              ? [0, maxCol + 1]
-              : [0, selection.end.c],
-        };
-      });
-    } else if (selection.start.r === selection.end.r) {
-      return [
-        {
-          r: selection.start.r,
-          c: [
-            Math.min(selection.start.c, selection.end.c),
-            Math.max(selection.start.c, selection.end.c),
-          ],
-        },
-      ];
-    } else if (selection.end.r < selection.start.r) {
-      return range(selection.end.r, selection.start.r + 1).map((r) => {
-        return {
-          r,
-          c:
-            r === selection.end.r
-              ? [selection.end.c, maxCol + 1]
-              : r < selection.start.r
-              ? [0, maxCol + 1]
-              : [0, selection.start.c],
-        };
-      });
-    } else {
-      throw new Error("range calculation error");
-    }
-  }, [selection]);
+  useEffect(() => {
+    return onEvent(window, "paste", (e) => {
+      if (caret) {
+        const pasteLines = e.clipboardData!.getData("text/plain").split("\n");
+        makeEdit((content) => {
+          return pasteAt(content.split("\n"), caret, pasteLines).join("\n");
+        });
+        setSelection(undefined);
+        setCaret({
+          r: caret.r + pasteLines.length - 1,
+          c: caret.c + pasteLines.slice(-1)[0].length,
+        });
+        e.preventDefault();
+      }
+    });
+  }, [makeEdit, caret, setCaret, setSelection]);
 
   return (
     <main
@@ -300,27 +312,20 @@ export function MorphingLayout({ page }: Props) {
           />
         )}
 
-        {selectionParts && (
-          <Fragment>
-            {selectionParts.map((part, i) => {
-              return (
-                <div
-                  key={i}
-                  style={{
-                    userSelect: "none",
-                    pointerEvents: "none",
-                    position: "absolute",
-                    zIndex: 30,
-                    height: CH,
-                    width: CW * (part.c[1] - part.c[0]),
-                    background: "#6a585822",
-                    top: part.r * CH + pad,
-                    left: part.c[0] * CW + pad,
-                  }}
-                />
-              );
-            })}
-          </Fragment>
+        {selectionBounds && (
+          <div
+            style={{
+              userSelect: "none",
+              pointerEvents: "none",
+              position: "absolute",
+              zIndex: 30,
+              height: CH * selectionBounds.height,
+              width: CW * selectionBounds.width,
+              background: "#6a585822",
+              top: selectionBounds.top * CH + pad,
+              left: selectionBounds.left * CW + pad,
+            }}
+          />
         )}
 
         {transitioning ? (
@@ -328,7 +333,6 @@ export function MorphingLayout({ page }: Props) {
         ) : (
           <Fragment key={page.slug}>
             {lines.map((line, i) => {
-              line = line.padEnd(longest, " ");
               return (
                 <div key={i} style={{ height: CH }}>
                   {tokenizeLine(line, page.links).map((token, i) => {
@@ -374,7 +378,11 @@ function LinkEl({ to = "", text = "" }) {
   );
 }
 
-function tokenizeLine(line, links) {
+type Token =
+  | { type: "text"; text: string }
+  | { type: "link"; text: string; to: string };
+
+function tokenizeLine(line: string, links: Record<string, string>): Token[] {
   if (line.length === 0) {
     return [];
   }
@@ -382,13 +390,13 @@ function tokenizeLine(line, links) {
   const found = Object.entries(links)
     .map(([text, to]) => {
       const i = line.indexOf(text);
-      return i >= 0 && [i, text, to];
+      return i >= 0 && ([i, text, to] as const);
     })
-    .filter(Boolean)
+    .filter((b): b is [number, string, string] => !!b)
     .sort((a, b) => a[0] - b[0]);
 
   if (found[0]) {
-    const tokens = [];
+    const tokens: Token[] = [];
     const [i, text, to] = found[0];
     if (i > 0) {
       tokens.push({ type: "text", text: line.slice(0, i) });
@@ -400,7 +408,7 @@ function tokenizeLine(line, links) {
   return [{ type: "text", text: line }];
 }
 
-function useEffectPrev(effect, deps) {
+function useEffectPrev(effect: any, deps: any) {
   const prevDeps = useRef([]);
   useEffect(() => {
     const cleanup = effect(prevDeps.current);
