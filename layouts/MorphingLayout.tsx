@@ -172,6 +172,14 @@ export function MorphingLayout(props: Props) {
             });
             e.preventDefault();
             e.stopPropagation();
+          } else if (caret) {
+            const back = { c: Math.max(0, caret.c - 1), r: caret.r };
+            setCaret(back);
+            makeEdit((content) => {
+              return setCharAt(content.split("\n"), back, " ").join("\n");
+            });
+            e.preventDefault();
+            e.stopPropagation();
           }
           break;
         }
@@ -180,7 +188,7 @@ export function MorphingLayout(props: Props) {
         // }
       }
     });
-  }, [moveCaret, selection, setCaret, setSelection]);
+  }, [caret, moveCaret, selection, setCaret, setSelection]);
 
   useEffect(() => {
     return onEvent(window, "keypress", (e) => {
