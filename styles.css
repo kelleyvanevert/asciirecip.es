@@ -11,6 +11,13 @@
   font-weight: 600;
 }
 
+@font-face {
+  font-family: "Fira Code";
+  src: local("Fira Code Light"),
+    url("/fonts/FiraCode-Light.ttf") format("truetype");
+  font-weight: 300;
+}
+
 html,
 body,
 pre {
@@ -30,6 +37,11 @@ pre {
   padding: 2px;
 }
 
+.link.outgoing {
+  font-weight: normal;
+  text-decoration: underline;
+}
+
 .link:hover {
   background-color: #eee;
   outline-offset: -2px;
@@ -40,36 +52,4 @@ pre {
 .link:active {
   outline-offset: -2px;
   outline: 2px solid black;
-}
-
-#editor_content {
-  display: block;
-  all: unset;
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  box-sizing: border-box;
-  min-height: 500px;
-}
-
-#editor_content.active:focus {
-  outline: 2px dotted #333;
-  outline-offset: 8px;
-}
-
-#drawbox {
-  display: block;
-  pointer-events: none;
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  user-select: none;
-}
-
-#drawbox.active {
-  pointer-events: auto;
-  outline: 2px solid black;
-  outline-offset: 8px;
 }

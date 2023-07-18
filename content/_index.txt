@@ -1,7 +1,7 @@
 ---
-title: "asciirecip.es"
+title: "ASCII recipes"
 links:
-  "ASCII RECIPES": "/"
+  "ASCII recipes": "/"
   "Kelley's": "https://klve.nl"
   "Gingerbread men": "/gingerbread_men"
   "Russian teacakes": "/russian_teacakes"
@@ -10,10 +10,9 @@ links:
   "Spinach enshiladas": "/spinach_enshiladas"
   "Pizza dough": "/pizza_dough"
   "Tim Holman's morphing effect": "https://tholman.com/post/ascii-morph/"
-  "recipe editor": "/_editor"
 ---
 
-ASCII RECIPES
+ASCII recipes
 
 
 
@@ -46,5 +45,3 @@ ASCII RECIPES
 - The use of transitioning effects was inspired by
    Tim Holman's morphing effect (the one that
    shrinks/expands the recipes)
-
-- Open recipe editor

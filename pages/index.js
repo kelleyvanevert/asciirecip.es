@@ -4,7 +4,7 @@ import { MorphingLayout } from "../layouts/MorphingLayout";
 export async function getStaticProps() {
   return {
     props: {
-      node: await getRecipe("_index"),
+      page: await getRecipe("_index"),
     },
   };
 }
