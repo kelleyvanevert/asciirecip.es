@@ -6,6 +6,7 @@ export type Caret = {
 export type Selection = {
   anchor?: Caret;
   caret: Caret;
+  selecting?: boolean;
 };
 
 export function constrainCaret({ c, r }: Caret) {
@@ -25,6 +26,7 @@ export function normalizeSelection(selection: Selection) {
   return {
     anchor,
     caret,
+    selecting: selection.selecting,
   };
 }
 
