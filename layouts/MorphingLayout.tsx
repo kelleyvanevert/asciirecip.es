@@ -1,11 +1,4 @@
-import {
-  Fragment,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import Head from "next/head";
 import Link from "next/link";
 
@@ -94,21 +87,19 @@ export function MorphingLayout(props: Props) {
   );
 
   const makeEdit = useCallback(
-    (edit: (content: string) => string) => {
+    (edit: (lines: string[]) => string[]) => {
       setState((state) => {
         return {
           ...state,
           page: {
             ...state.page,
-            content: edit(state.page.content),
+            lines: edit(state.page.lines),
           },
         };
       });
     },
     [setState]
   );
-
-  const content = page.content;
 
   useEffectPrev(
     ([prevPage]: [Page]) => {
@@ -120,10 +111,7 @@ export function MorphingLayout(props: Props) {
         const randomEffect =
           effects[Math.floor(Math.random() * effects.length)];
 
-        const frames = randomEffect(
-          prevPage.content.split("\n"),
-          props.page.content.split("\n")
-        );
+        const frames = randomEffect(prevPage.lines, props.page.lines);
 
         const ms = 500 / frames.length;
 
@@ -150,7 +138,7 @@ export function MorphingLayout(props: Props) {
     [props.page, setSelections, setTransitioning]
   );
 
-  const lines = useMemo(() => content.split("\n"), [content]);
+  const lines = page.lines;
   const longest = Math.max(...lines.map((line) => line.length));
   const maxCol = longest - 1;
   const maxRow = lines.length - 1;
@@ -202,8 +190,8 @@ export function MorphingLayout(props: Props) {
           c: !boxDrawingMode && dc === 1 ? caret.c : Math.max(0, caret.c + dc),
         };
 
-        makeEdit((content) => {
-          return drawBoxCharAt(content.split("\n"), newCaret, false).join("\n");
+        makeEdit((lines) => {
+          return drawBoxCharAt(lines, newCaret, false);
         });
 
         return {
@@ -217,8 +205,8 @@ export function MorphingLayout(props: Props) {
 
   const clearCurrentSelections = useCallback(() => {
     setSelections((selection) => {
-      makeEdit((content) => {
-        return clearSelection(content.split("\n"), selection).join("\n");
+      makeEdit((lines) => {
+        return clearSelection(lines, selection);
       });
       return { caret: selectionTopLeft(selection) };
     });
@@ -270,10 +258,8 @@ export function MorphingLayout(props: Props) {
         case "Backspace": {
           setSelections((selection) => {
             if (selection.anchor) {
-              makeEdit((content) => {
-                return clearSelection(content.split("\n"), selection).join(
-                  "\n"
-                );
+              makeEdit((lines) => {
+                return clearSelection(lines, selection);
               });
               return { caret: selectionTopLeft(selection) };
             } else {
@@ -281,8 +267,8 @@ export function MorphingLayout(props: Props) {
                 c: Math.max(0, selection.caret.c - 1),
                 r: selection.caret.r,
               };
-              makeEdit((content) => {
-                return setCharAt(content.split("\n"), back, " ").join("\n");
+              makeEdit((lines) => {
+                return setCharAt(lines, back, " ");
               });
 
               return { caret: back };
@@ -304,8 +290,8 @@ export function MorphingLayout(props: Props) {
     return onEvent(window, "keypress", (e) => {
       setSelections((selection) => {
         const writeAt = selectionTopLeft(selection);
-        makeEdit((content) => {
-          return setCharAt(content.split("\n"), writeAt, e.key).join("\n");
+        makeEdit((lines) => {
+          return setCharAt(lines, writeAt, e.key);
         });
         return {
           caret: { c: writeAt.c + 1, r: writeAt.r },
@@ -388,8 +374,8 @@ export function MorphingLayout(props: Props) {
       setSelections((selection, i) => {
         const pasteLines = copiedTexts[i].split("\n");
         const tl = selectionTopLeft(selection);
-        makeEdit((content) => {
-          return pasteAt(content.split("\n"), tl, pasteLines).join("\n");
+        makeEdit((lines) => {
+          return pasteAt(lines, tl, pasteLines);
         });
         return {
           caret: {
@@ -405,8 +391,8 @@ export function MorphingLayout(props: Props) {
 
   const drawBoxChar = useCallback(
     (caret: Caret, clear: boolean) => {
-      makeEdit((content) => {
-        return drawBoxCharAt(content.split("\n"), caret, clear).join("\n");
+      makeEdit((lines) => {
+        return drawBoxCharAt(lines, caret, clear);
       });
     },
     [makeEdit]
@@ -438,13 +424,11 @@ export function MorphingLayout(props: Props) {
         onMouseDown={(e) => {
           const caret = getCaretPos(e);
           if (e.altKey) {
-            console.log("add selection");
             addSelection({ caret, selecting: true });
-            e.stopPropagation();
           } else {
             setSelections([{ caret, selecting: true }]);
-            e.stopPropagation();
           }
+          e.stopPropagation();
         }}
         onMouseMove={(e) => {
           const caret = getCaretPos(e);
@@ -602,12 +586,4 @@ function useEffectPrev(effect: any, deps: any) {
     prevDeps.current = deps;
     return cleanup;
   }, deps);
-}
-
-function range(startIncl: number, endExcl: number) {
-  return Array(endExcl - startIncl)
-    .fill(null)
-    .map((_, i) => {
-      return startIncl + i;
-    });
 }
