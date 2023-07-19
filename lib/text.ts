@@ -7,6 +7,7 @@ export type Selection = {
   anchor?: Caret;
   caret: Caret;
   selecting?: boolean;
+  boxDrawingMode?: boolean;
 };
 
 export function constrainCaret({ c, r }: Caret) {
@@ -122,7 +123,7 @@ export function drawBoxCharAt(lines: string[], caret: Caret, clear: boolean) {
   return lines;
 }
 
-const box = "∘";
+const box = "∙";
 const tl = "╭";
 const tr = "╮";
 const bl = "╰";
