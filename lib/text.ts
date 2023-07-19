@@ -4,9 +4,13 @@ export type Caret = {
 };
 
 export type Selection = {
-  start: Caret;
-  end: Caret;
+  anchor?: Caret;
+  caret: Caret;
 };
+
+export function isSameCaret(a: Caret, b: Caret) {
+  return a.c === b.c && a.r === b.r;
+}
 
 export function selectionTopLeft(selection: Selection): Caret {
   const { top, left } = getSelectionBounds(selection);
@@ -17,12 +21,14 @@ export function selectionTopLeft(selection: Selection): Caret {
 }
 
 export function getSelectionBounds(selection: Selection) {
-  const left = Math.min(selection.start.c, selection.end.c);
-  const top = Math.min(selection.start.r, selection.end.r);
+  const anchor = selection.anchor ?? selection.caret;
+
+  const left = Math.min(anchor.c, selection.caret.c);
+  const top = Math.min(anchor.r, selection.caret.r);
 
   // haha, wow, this assymetry seems to be a logical thing :P
-  const width = Math.abs(selection.start.c - selection.end.c);
-  const height = Math.abs(selection.start.r - selection.end.r) + 1;
+  const width = Math.abs(anchor.c - selection.caret.c);
+  const height = Math.abs(anchor.r - selection.caret.r) + 1;
 
   return {
     left,
