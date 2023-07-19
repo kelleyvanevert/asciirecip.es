@@ -331,7 +331,7 @@ export function MorphingLayout(props: Props) {
               if (!selection) return;
 
               return normalizeSelection({
-                anchor: selection.anchor,
+                anchor: selection.anchor ?? selection.caret,
                 caret,
               });
             });
@@ -349,7 +349,7 @@ export function MorphingLayout(props: Props) {
               if (!selection) return;
 
               return normalizeSelection({
-                anchor: selection.anchor,
+                anchor: selection.anchor ?? selection.caret,
                 caret,
               });
             });
