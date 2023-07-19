@@ -21,7 +21,7 @@ import {
   getSelectionBounds,
   clearSelection,
   drawBoxCharAt,
-  isSameCaret,
+  normalizeSelection,
 } from "../lib/text";
 import { useKeyPressed } from "../lib/useKeyPressed";
 
@@ -117,19 +117,16 @@ export function MorphingLayout(props: Props) {
   };
 
   const moveCaret = useCallback(
-    (update: (caret: Caret) => Caret) => {
+    (selectMode: boolean, update: (caret: Caret) => Caret) => {
       setSelection((selection) => {
         if (!selection) {
           return;
         }
 
-        const { c, r } = update(selection.caret);
-        return {
-          caret: {
-            c: Math.max(0, c),
-            r: Math.max(0, r),
-          },
-        };
+        return normalizeSelection({
+          anchor: !selectMode ? undefined : selection.anchor ?? selection.caret,
+          caret: update(selection.caret),
+        });
       });
     },
     [setSelection, maxCol, maxRow]
@@ -149,7 +146,7 @@ export function MorphingLayout(props: Props) {
     return onEvent(window, "keydown", (e) => {
       switch (e.key) {
         case "ArrowRight": {
-          moveCaret((c) => {
+          moveCaret(e.shiftKey, (c) => {
             return { c: c.c + 1, r: c.r };
           });
           e.preventDefault();
@@ -157,7 +154,7 @@ export function MorphingLayout(props: Props) {
           break;
         }
         case "ArrowUp": {
-          moveCaret((c) => {
+          moveCaret(e.shiftKey, (c) => {
             return { c: c.c, r: c.r - 1 };
           });
           e.preventDefault();
@@ -165,7 +162,7 @@ export function MorphingLayout(props: Props) {
           break;
         }
         case "ArrowLeft": {
-          moveCaret((c) => {
+          moveCaret(e.shiftKey, (c) => {
             return { c: c.c - 1, r: c.r };
           });
           e.preventDefault();
@@ -173,7 +170,7 @@ export function MorphingLayout(props: Props) {
           break;
         }
         case "ArrowDown": {
-          moveCaret((c) => {
+          moveCaret(e.shiftKey, (c) => {
             return { c: c.c, r: c.r + 1 };
           });
           e.preventDefault();
@@ -215,14 +212,14 @@ export function MorphingLayout(props: Props) {
         makeEdit((content) => {
           return setCharAt(content.split("\n"), writeAt, e.key).join("\n");
         });
-        moveCaret((c) => {
-          return { c: writeAt.c + 1, r: writeAt.r };
+        setSelection({
+          caret: { c: writeAt.c + 1, r: writeAt.r },
         });
         e.preventDefault();
         e.stopPropagation();
       }
     });
-  }, [makeEdit, selection]);
+  }, [makeEdit, selection, setSelection]);
 
   const selectionBounds = useMemo(() => {
     if (selection?.anchor) {
@@ -333,11 +330,10 @@ export function MorphingLayout(props: Props) {
             setSelection((selection) => {
               if (!selection) return;
 
-              const anchor = selection.anchor ?? selection.caret;
-              return {
-                anchor: !isSameCaret(anchor, caret) ? anchor : undefined,
+              return normalizeSelection({
+                anchor: selection.anchor,
                 caret,
-              };
+              });
             });
             e.stopPropagation();
           }
@@ -352,11 +348,10 @@ export function MorphingLayout(props: Props) {
             setSelection((selection) => {
               if (!selection) return;
 
-              const anchor = selection.anchor ?? selection.caret;
-              return {
-                anchor: !isSameCaret(anchor, caret) ? anchor : undefined,
+              return normalizeSelection({
+                anchor: selection.anchor,
                 caret,
-              };
+              });
             });
             e.stopPropagation();
           }
@@ -386,7 +381,7 @@ export function MorphingLayout(props: Props) {
               position: "absolute",
               zIndex: 30,
               height: CH * selectionBounds.height,
-              width: CW * selectionBounds.width,
+              width: CW * selectionBounds.width + 2,
               background: "#6a585822",
               top: selectionBounds.top * CH + pad,
               left: selectionBounds.left * CW + pad,

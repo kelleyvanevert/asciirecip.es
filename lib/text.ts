@@ -8,8 +8,24 @@ export type Selection = {
   caret: Caret;
 };
 
-export function isSameCaret(a: Caret, b: Caret) {
-  return a.c === b.c && a.r === b.r;
+export function constrainCaret({ c, r }: Caret) {
+  return {
+    c: Math.max(0, c),
+    r: Math.max(0, r),
+  };
+}
+
+export function normalizeSelection(selection: Selection) {
+  const caret = constrainCaret(selection.caret);
+  let anchor = selection.anchor && constrainCaret(selection.anchor);
+  if (anchor && anchor.c === caret.c && anchor.r === caret.r) {
+    anchor = undefined;
+  }
+
+  return {
+    anchor,
+    caret,
+  };
 }
 
 export function selectionTopLeft(selection: Selection): Caret {
