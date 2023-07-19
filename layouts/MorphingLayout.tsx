@@ -1,5 +1,6 @@
 import {
   Fragment,
+  SetStateAction,
   useCallback,
   useEffect,
   useMemo,
@@ -39,27 +40,53 @@ type Props = {
 export function MorphingLayout(props: Props) {
   const ref = useRef<HTMLPreElement>(null);
 
-  const [page, setPage] = useState(props.page);
+  const [state, setState] = useState<{
+    page: Page;
+    selection?: Selection;
+  }>({
+    page: props.page,
+  });
+  const { page, selection } = state;
 
   const [transitioning, setTransitioning] = useState<{ content: string }>();
   const isSelecting = useRef(false);
   const isDrawingBoxes = useRef(false);
 
-  const [selection, setSelection] = useState<Selection>();
-
   const altPressed = useKeyPressed("Alt");
   const shiftPressed = useKeyPressed("Shift");
 
+  const setSelection = useCallback(
+    (action: SetStateAction<Selection | undefined>) => {
+      setState((state) => {
+        if (typeof action === "function") {
+          return {
+            ...state,
+            selection: action(state.selection),
+          };
+        } else {
+          return {
+            ...state,
+            selection: action,
+          };
+        }
+      });
+    },
+    [setState]
+  );
+
   const makeEdit = useCallback(
     (edit: (content: string) => string) => {
-      setPage((page) => {
+      setState((state) => {
         return {
-          ...page,
-          content: edit(page.content),
+          ...state,
+          page: {
+            ...state.page,
+            content: edit(state.page.content),
+          },
         };
       });
     },
-    [setPage]
+    [setState]
   );
 
   const content = page.content;
@@ -86,7 +113,7 @@ export function MorphingLayout(props: Props) {
 
           if (frames.length === 0) {
             setTransitioning(undefined);
-            setPage(props.page);
+            setState({ page: props.page });
           } else {
             const frame = frames.shift();
             setTransitioning({ content: frame.join("\n") });
@@ -101,7 +128,7 @@ export function MorphingLayout(props: Props) {
         timely = false;
       };
     },
-    [props.page, setPage, setSelection, setTransitioning]
+    [props.page, setSelection, setTransitioning]
   );
 
   const lines = useMemo(() => content.split("\n"), [content]);
