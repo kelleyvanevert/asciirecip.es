@@ -34,13 +34,15 @@ ASCII recipes
 
 
 
-
-
-
-
 ────
 
 - A little hobby project of Kelley's
+
+- Feel free to make edits!
+  * copy/paste stuff (only ASCII allowed!)
+  * use <Cmd> to draw boxes
+  * use <Opt> for multi-selection
+  * saving and undo/redo will be added soon
 
 - The use of transitioning effects was inspired by
    Tim Holman's morphing effect (the one that
