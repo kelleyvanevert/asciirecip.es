@@ -17,7 +17,29 @@ export function constrainCaret({ c, r }: Caret) {
   };
 }
 
-export function normalizeSelection(selection: Selection) {
+export function removeDuplicateSelections(
+  selections: Selection[]
+): Selection[] {
+  const keys: Record<string, boolean> = {};
+
+  return selections.filter((selection) => {
+    const key = [
+      selection.caret.r,
+      selection.caret.c,
+      selection.boxDrawingMode ? "B" : "|",
+      selection.anchor ? "A" : "_",
+    ].join("_");
+
+    if (keys[key]) {
+      return false;
+    } else {
+      keys[key] = true;
+      return true;
+    }
+  });
+}
+
+export function normalizeSelection(selection: Selection): Selection {
   const caret = constrainCaret(selection.caret);
   let anchor = selection.anchor && constrainCaret(selection.anchor);
   if (anchor && anchor.c === caret.c && anchor.r === caret.r) {
@@ -28,7 +50,44 @@ export function normalizeSelection(selection: Selection) {
     anchor,
     caret,
     selecting: selection.selecting,
+    boxDrawingMode: selection.boxDrawingMode || undefined,
   };
+}
+
+export function expandSelection(
+  selection: Selection,
+  dr: number,
+  dc: number
+): Selection {
+  if (!selection.anchor) {
+    console.warn("Cannot expand selection without anchor");
+    return selection;
+  }
+
+  if (
+    (dr === -1 && selection.anchor.r < selection.caret.r) ||
+    (dr === 1 && selection.anchor.r >= selection.caret.r) ||
+    (dc === -1 && selection.anchor.c < selection.caret.c) ||
+    (dc === 1 && selection.anchor.c >= selection.caret.c)
+  ) {
+    // move the anchor if it is in the direction of the expansion
+    return {
+      ...selection,
+      anchor: {
+        r: selection.anchor.r + dr,
+        c: selection.anchor.c + dc,
+      },
+    };
+  } else {
+    // otherwise, move the caret
+    return {
+      ...selection,
+      caret: {
+        r: selection.caret.r + dr,
+        c: selection.caret.c + dc,
+      },
+    };
+  }
 }
 
 export function selectionTopLeft(selection: Selection): Caret {

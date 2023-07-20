@@ -16,6 +16,8 @@ import {
   drawBoxCharAt,
   normalizeSelection,
   constrainCaret,
+  removeDuplicateSelections,
+  expandSelection,
 } from "../lib/text";
 import { useKeyPressed } from "../lib/useKeyPressed";
 
@@ -52,16 +54,22 @@ export function MorphingLayout(props: Props) {
   const setSelections = useCallback(
     (
       action:
-        | ((selection: Selection, index: number) => Selection | undefined)
+        | ((
+            selection: Selection,
+            index: number
+          ) => Selection[] | Selection | undefined)
         | Selection[]
     ) => {
       setState((state) => {
         if (typeof action === "function") {
           return {
             ...state,
-            selections: state.selections
-              ?.map(action)
-              .filter((s): s is Selection => !!s),
+            selections: removeDuplicateSelections(
+              state.selections
+                ?.flatMap(action)
+                .filter((s): s is Selection => !!s)
+                .map(normalizeSelection)
+            ),
           };
         } else {
           return {
@@ -156,6 +164,9 @@ export function MorphingLayout(props: Props) {
         if (isDrawingBoxes) {
           setDrawingBoxes(false);
           if (dc === -1) {
+            // When exiting box drawing mode & moving to the left,
+            //  don't actually move, because of how the
+            //  "box drawing mode caret" looks/works
             return {
               ...selection,
               boxDrawingMode: false,
@@ -203,6 +214,50 @@ export function MorphingLayout(props: Props) {
     [setSelections, setDrawingBoxes, maxCol, maxRow]
   );
 
+  const expandOrAddExtraCaret = useCallback(
+    (dr: number, dc: number) => {
+      // We don't have to worry about exiting box drawing mode horizontally,
+      //  because this operation is only vertical anyway
+      setDrawingBoxes(false);
+
+      setSelections((selection) => {
+        if (selection.anchor && selection.anchor.r !== selection.caret.r) {
+          return expandSelection(selection, dr, dc);
+        } else if (dr === 0) {
+          return {
+            boxDrawingMode: false,
+            caret: constrainCaret({
+              r: selection.caret.r + dr,
+              c: selection.caret.c + dc,
+            }),
+          };
+        } else {
+          // add extra caret below or above
+          return [
+            {
+              ...selection,
+              boxDrawingMode: false,
+            },
+            {
+              boxDrawingMode: false,
+              caret: {
+                c: selection.caret.c,
+                r: selection.caret.r + dr,
+              },
+              anchor: selection.anchor
+                ? {
+                    c: selection.anchor.c,
+                    r: selection.anchor.r + dr,
+                  }
+                : undefined,
+            },
+          ];
+        }
+      });
+    },
+    [setSelections, moveCaret, isDrawingBoxes, setDrawingBoxes, maxCol, maxRow]
+  );
+
   const clearCurrentSelections = useCallback(() => {
     setSelections((selection) => {
       makeEdit((lines) => {
@@ -215,18 +270,10 @@ export function MorphingLayout(props: Props) {
   useEffect(() => {
     return onEvent(window, "keydown", (e) => {
       switch (e.key) {
-        case "ArrowRight": {
-          if (e.metaKey) {
-            moveCaretAndDrawBoxChar(e.shiftKey, 0, 1);
-          } else {
-            moveCaret(e.shiftKey, 0, 1);
-          }
-          e.preventDefault();
-          e.stopPropagation();
-          break;
-        }
         case "ArrowUp": {
-          if (e.metaKey) {
+          if (e.altKey) {
+            expandOrAddExtraCaret(-1, 0);
+          } else if (e.metaKey) {
             moveCaretAndDrawBoxChar(e.shiftKey, -1, 0);
           } else {
             moveCaret(e.shiftKey, -1, 0);
@@ -235,21 +282,37 @@ export function MorphingLayout(props: Props) {
           e.stopPropagation();
           break;
         }
-        case "ArrowLeft": {
-          if (e.metaKey) {
-            moveCaretAndDrawBoxChar(e.shiftKey, 0, -1);
+        case "ArrowDown": {
+          if (e.altKey) {
+            expandOrAddExtraCaret(1, 0);
+          } else if (e.metaKey) {
+            moveCaretAndDrawBoxChar(e.shiftKey, 1, 0);
           } else {
-            moveCaret(e.shiftKey, 0, -1);
+            moveCaret(e.shiftKey, 1, 0);
           }
           e.preventDefault();
           e.stopPropagation();
           break;
         }
-        case "ArrowDown": {
-          if (e.metaKey) {
-            moveCaretAndDrawBoxChar(e.shiftKey, 1, 0);
+        case "ArrowRight": {
+          if (e.altKey) {
+            expandOrAddExtraCaret(0, 1);
+          } else if (e.metaKey) {
+            moveCaretAndDrawBoxChar(e.shiftKey, 0, 1);
           } else {
-            moveCaret(e.shiftKey, 1, 0);
+            moveCaret(e.shiftKey, 0, 1);
+          }
+          e.preventDefault();
+          e.stopPropagation();
+          break;
+        }
+        case "ArrowLeft": {
+          if (e.altKey) {
+            expandOrAddExtraCaret(0, -1);
+          } else if (e.metaKey) {
+            moveCaretAndDrawBoxChar(e.shiftKey, 0, -1);
+          } else {
+            moveCaret(e.shiftKey, 0, -1);
           }
           e.preventDefault();
           e.stopPropagation();
@@ -284,7 +347,7 @@ export function MorphingLayout(props: Props) {
         // }
       }
     });
-  }, [moveCaret, setSelections, makeEdit]);
+  }, [moveCaret, setSelections, makeEdit, expandOrAddExtraCaret]);
 
   useEffect(() => {
     return onEvent(window, "keypress", (e) => {
