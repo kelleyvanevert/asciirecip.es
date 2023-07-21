@@ -24,6 +24,7 @@ import {
   normalizeSelection,
 } from "../lib/text";
 import { useKeyPressed } from "../lib/useKeyPressed";
+import { useDarkMode } from "../lib/useDarkMode";
 
 const effects = [sandstorm, dissolve, asciiMorph];
 
@@ -37,6 +38,7 @@ type Props = {
 };
 
 export function MorphingLayout(props: Props) {
+  const isDarkMode = useDarkMode();
   const ref = useRef<HTMLPreElement>(null);
 
   const [state, setState] = useState<{
@@ -476,7 +478,7 @@ export function MorphingLayout(props: Props) {
                   zIndex: 30,
                   height: CH,
                   width: 2,
-                  background: "#333",
+                  background: "var(--text)",
                   top: selection.caret.r * CH + pad,
                   left: selection.caret.c * CW + pad,
                 }}
@@ -491,7 +493,7 @@ export function MorphingLayout(props: Props) {
                     zIndex: 25,
                     height: CH * bounds.height,
                     width: CW * bounds.width + 2,
-                    background: "#6a585822",
+                    background: "var(--selection)",
                     top: bounds.top * CH + pad,
                     left: bounds.left * CW + pad,
                   }}

@@ -18,6 +18,20 @@
   font-weight: 300;
 }
 
+body {
+  --background: white;
+  --text: #333;
+  --emph: black;
+  --selection: #6a585822;
+}
+
+body.dark {
+  --background: #222;
+  --text: #ccc;
+  --emph: white;
+  --selection: #a28d8d22;
+}
+
 html,
 body,
 pre {
@@ -26,13 +40,17 @@ pre {
   font-family: "Fira Code";
   font-size: 18px;
   line-height: 124%;
-  color: #333;
+  color: var(--text);
+}
+
+body.dark {
+  background: var(--background);
 }
 
 .link {
   font-weight: 600;
   text-decoration: none;
-  color: black;
+  color: var(--emph);
   margin: -2px;
   padding: 2px;
 }
@@ -43,13 +61,23 @@ pre {
 }
 
 .link:hover {
-  background-color: #eee;
+  background: #eee;
   outline-offset: -2px;
   outline: 2px solid #ddd;
+}
+
+.dark .link:hover {
+  background: #333;
+  outline-color: #666;
 }
 
 .link:focus,
 .link:active {
   outline-offset: -2px;
   outline: 2px solid black;
+}
+
+.dark .link:focus,
+.dark .link:active {
+  outline-color: #ddd;
 }
