@@ -1,8 +1,8 @@
-import { GetServerSideProps } from "next";
+import { GetStaticProps } from "next";
 import { Page, getRecipe } from "../lib/recipes";
 import { MorphingLayout } from "../layouts/MorphingLayout";
 
-export const getServerSideProps: GetServerSideProps<{
+export const getStaticProps: GetStaticProps<{
   page: Page;
 }> = async () => {
   return {
