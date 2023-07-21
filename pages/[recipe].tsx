@@ -5,20 +5,20 @@ import { GetServerSideProps } from "next";
 export const getServerSideProps: GetServerSideProps<{ page: Page }> = async ({
   params,
 }) => {
-  const page = await getRecipe(String(params?.recipe));
+  try {
+    const page = await getRecipe(String(params?.recipe));
 
-  if (!page) {
+    return {
+      props: {
+        page,
+      },
+    };
+  } catch {
     return {
       notFound: true,
       props: {},
     };
   }
-
-  return {
-    props: {
-      page,
-    },
-  };
 };
 
 export default MorphingLayout;
