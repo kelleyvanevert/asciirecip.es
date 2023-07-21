@@ -20,6 +20,8 @@
 
 body {
   --background: white;
+  --off-background: #eee;
+  --off-background-2: #ccc;
   --text: #333;
   --emph: black;
   --selection: #6a585822;
@@ -27,6 +29,8 @@ body {
 
 body.dark {
   --background: #222;
+  --off-background: #333;
+  --off-background-2: #666;
   --text: #ccc;
   --emph: white;
   --selection: #a28d8d22;
@@ -61,23 +65,13 @@ body.dark {
 }
 
 .link:hover {
-  background: #eee;
+  background: var(--off-background);
   outline-offset: -2px;
-  outline: 2px solid #ddd;
-}
-
-.dark .link:hover {
-  background: #333;
-  outline-color: #666;
+  outline: 2px solid var(--off-background-2);
 }
 
 .link:focus,
 .link:active {
   outline-offset: -2px;
-  outline: 2px solid black;
-}
-
-.dark .link:focus,
-.dark .link:active {
-  outline-color: #ddd;
+  outline: 2px solid var(--text);
 }

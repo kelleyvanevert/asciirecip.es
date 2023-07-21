@@ -1,11 +1,4 @@
-import {
-  Fragment,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import Head from "next/head";
 import Link from "next/link";
 
@@ -22,6 +15,9 @@ import {
   clearSelection,
   drawBoxCharAt,
   normalizeSelection,
+  constrainCaret,
+  removeDuplicateSelections,
+  expandSelection,
 } from "../lib/text";
 import { useKeyPressed } from "../lib/useKeyPressed";
 import { useDarkMode } from "../lib/useDarkMode";
@@ -51,7 +47,7 @@ export function MorphingLayout(props: Props) {
   const { page, selections } = state;
 
   const [transitioning, setTransitioning] = useState<{ content: string }>();
-  const isDrawingBoxes = useRef(false);
+  const [isDrawingBoxes, setDrawingBoxes] = useState(false);
 
   const altPressed = useKeyPressed("Alt");
   const metaPressed = useKeyPressed("Meta");
@@ -59,15 +55,23 @@ export function MorphingLayout(props: Props) {
 
   const setSelections = useCallback(
     (
-      action: ((selection: Selection) => Selection | undefined) | Selection[]
+      action:
+        | ((
+            selection: Selection,
+            index: number
+          ) => Selection[] | Selection | undefined)
+        | Selection[]
     ) => {
       setState((state) => {
         if (typeof action === "function") {
           return {
             ...state,
-            selections: state.selections
-              ?.map(action)
-              .filter((s): s is Selection => !!s),
+            selections: removeDuplicateSelections(
+              state.selections
+                ?.flatMap(action)
+                .filter((s): s is Selection => !!s)
+                .map(normalizeSelection)
+            ),
           };
         } else {
           return {
@@ -93,21 +97,19 @@ export function MorphingLayout(props: Props) {
   );
 
   const makeEdit = useCallback(
-    (edit: (content: string) => string) => {
+    (edit: (lines: string[]) => string[]) => {
       setState((state) => {
         return {
           ...state,
           page: {
             ...state.page,
-            content: edit(state.page.content),
+            lines: edit(state.page.lines),
           },
         };
       });
     },
     [setState]
   );
-
-  const content = page.content;
 
   useEffectPrev(
     ([prevPage]: [Page]) => {
@@ -119,10 +121,7 @@ export function MorphingLayout(props: Props) {
         const randomEffect =
           effects[Math.floor(Math.random() * effects.length)];
 
-        const frames = randomEffect(
-          prevPage.content.split("\n"),
-          props.page.content.split("\n")
-        );
+        const frames = randomEffect(prevPage.lines, props.page.lines);
 
         const ms = 500 / frames.length;
 
@@ -149,7 +148,7 @@ export function MorphingLayout(props: Props) {
     [props.page, setSelections, setTransitioning]
   );
 
-  const lines = useMemo(() => content.split("\n"), [content]);
+  const lines = page.lines;
   const longest = Math.max(...lines.map((line) => line.length));
   const maxCol = longest - 1;
   const maxRow = lines.length - 1;
@@ -162,93 +161,184 @@ export function MorphingLayout(props: Props) {
   };
 
   const moveCaret = useCallback(
-    (selectMode: boolean, update: (caret: Caret) => Caret) => {
+    (selectMode: boolean, dr: number, dc: number) => {
       setSelections((selection) => {
-        if (!selection) {
-          return;
+        if (isDrawingBoxes) {
+          setDrawingBoxes(false);
+          if (dc === -1) {
+            // When exiting box drawing mode & moving to the left,
+            //  don't actually move, because of how the
+            //  "box drawing mode caret" looks/works
+            return {
+              ...selection,
+              boxDrawingMode: false,
+            };
+          }
         }
 
         return normalizeSelection({
           anchor: !selectMode ? undefined : selection.anchor ?? selection.caret,
-          caret: update(selection.caret),
+          caret: constrainCaret({
+            r: selection.caret.r + dr,
+            c: selection.caret.c + dc,
+          }),
         });
       });
     },
-    [setSelections, maxCol, maxRow]
+    [setSelections, isDrawingBoxes, setDrawingBoxes]
+  );
+
+  const moveCaretAndDrawBoxChar = useCallback(
+    (clear: boolean, dr: number, dc: number) => {
+      setDrawingBoxes(true);
+      setSelections((selection) => {
+        const { caret, boxDrawingMode } = selection;
+
+        const newCaret = {
+          r: Math.max(0, caret.r + dr),
+
+          // When entering box drawing mode & moving to the right,
+          //  don't actually move, because of how the
+          //  "box drawing mode caret" looks/works
+          c: !boxDrawingMode && dc === 1 ? caret.c : Math.max(0, caret.c + dc),
+        };
+
+        makeEdit((lines) => {
+          return drawBoxCharAt(lines, newCaret, false);
+        });
+
+        return {
+          caret: newCaret,
+          boxDrawingMode: true,
+        };
+      });
+    },
+    [setSelections, setDrawingBoxes, maxCol, maxRow]
+  );
+
+  const expandOrAddExtraCaret = useCallback(
+    (dr: number, dc: number) => {
+      // We don't have to worry about exiting box drawing mode horizontally,
+      //  because this operation is only vertical anyway
+      setDrawingBoxes(false);
+
+      setSelections((selection) => {
+        if (selection.anchor && selection.anchor.r !== selection.caret.r) {
+          return expandSelection(selection, dr, dc);
+        } else if (dr === 0) {
+          return {
+            boxDrawingMode: false,
+            caret: constrainCaret({
+              r: selection.caret.r + dr,
+              c: selection.caret.c + dc,
+            }),
+          };
+        } else {
+          // add extra caret below or above
+          return [
+            {
+              ...selection,
+              boxDrawingMode: false,
+            },
+            {
+              boxDrawingMode: false,
+              caret: {
+                c: selection.caret.c,
+                r: selection.caret.r + dr,
+              },
+              anchor: selection.anchor
+                ? {
+                    c: selection.anchor.c,
+                    r: selection.anchor.r + dr,
+                  }
+                : undefined,
+            },
+          ];
+        }
+      });
+    },
+    [setSelections, moveCaret, isDrawingBoxes, setDrawingBoxes, maxCol, maxRow]
   );
 
   const clearCurrentSelections = useCallback(() => {
     setSelections((selection) => {
+      makeEdit((lines) => {
+        return clearSelection(lines, selection);
+      });
       return { caret: selectionTopLeft(selection) };
     });
-    makeEdit((content) => {
-      for (const selection of selections) {
-        content = clearSelection(content.split("\n"), selection).join("\n");
-      }
-      return content;
-    });
-  }, [selections, setSelections, makeEdit]);
+  }, [setSelections, makeEdit]);
 
   useEffect(() => {
     return onEvent(window, "keydown", (e) => {
       switch (e.key) {
-        case "ArrowRight": {
-          moveCaret(e.shiftKey, (c) => {
-            return { c: c.c + 1, r: c.r };
-          });
-          e.preventDefault();
-          e.stopPropagation();
-          break;
-        }
         case "ArrowUp": {
-          moveCaret(e.shiftKey, (c) => {
-            return { c: c.c, r: c.r - 1 };
-          });
-          e.preventDefault();
-          e.stopPropagation();
-          break;
-        }
-        case "ArrowLeft": {
-          moveCaret(e.shiftKey, (c) => {
-            return { c: c.c - 1, r: c.r };
-          });
+          if (e.altKey) {
+            expandOrAddExtraCaret(-1, 0);
+          } else if (e.metaKey) {
+            moveCaretAndDrawBoxChar(e.shiftKey, -1, 0);
+          } else {
+            moveCaret(e.shiftKey, -1, 0);
+          }
           e.preventDefault();
           e.stopPropagation();
           break;
         }
         case "ArrowDown": {
-          moveCaret(e.shiftKey, (c) => {
-            return { c: c.c, r: c.r + 1 };
-          });
+          if (e.altKey) {
+            expandOrAddExtraCaret(1, 0);
+          } else if (e.metaKey) {
+            moveCaretAndDrawBoxChar(e.shiftKey, 1, 0);
+          } else {
+            moveCaret(e.shiftKey, 1, 0);
+          }
+          e.preventDefault();
+          e.stopPropagation();
+          break;
+        }
+        case "ArrowRight": {
+          if (e.altKey) {
+            expandOrAddExtraCaret(0, 1);
+          } else if (e.metaKey) {
+            moveCaretAndDrawBoxChar(e.shiftKey, 0, 1);
+          } else {
+            moveCaret(e.shiftKey, 0, 1);
+          }
+          e.preventDefault();
+          e.stopPropagation();
+          break;
+        }
+        case "ArrowLeft": {
+          if (e.altKey) {
+            expandOrAddExtraCaret(0, -1);
+          } else if (e.metaKey) {
+            moveCaretAndDrawBoxChar(e.shiftKey, 0, -1);
+          } else {
+            moveCaret(e.shiftKey, 0, -1);
+          }
           e.preventDefault();
           e.stopPropagation();
           break;
         }
         case "Backspace": {
-          if (selections.length === 0) return;
+          setSelections((selection) => {
+            if (selection.anchor) {
+              makeEdit((lines) => {
+                return clearSelection(lines, selection);
+              });
+              return { caret: selectionTopLeft(selection) };
+            } else {
+              const back = {
+                c: Math.max(0, selection.caret.c - 1),
+                r: selection.caret.r,
+              };
+              makeEdit((lines) => {
+                return setCharAt(lines, back, " ");
+              });
 
-          setSelections(
-            selections.map((selection): Selection => {
-              if (selection.anchor) {
-                makeEdit((content) => {
-                  return clearSelection(content.split("\n"), selection).join(
-                    "\n"
-                  );
-                });
-                return { caret: selectionTopLeft(selection) };
-              } else {
-                const back = {
-                  c: Math.max(0, selection.caret.c - 1),
-                  r: selection.caret.r,
-                };
-                makeEdit((content) => {
-                  return setCharAt(content.split("\n"), back, " ").join("\n");
-                });
-
-                return { caret: back };
-              }
-            })
-          );
+              return { caret: back };
+            }
+          });
 
           e.preventDefault();
           e.stopPropagation();
@@ -259,30 +349,24 @@ export function MorphingLayout(props: Props) {
         // }
       }
     });
-  }, [selections, moveCaret, setSelections, makeEdit]);
+  }, [moveCaret, setSelections, makeEdit, expandOrAddExtraCaret]);
 
   useEffect(() => {
     return onEvent(window, "keypress", (e) => {
-      if (selections.length === 0) {
-        return;
-      }
-
-      setSelections(
-        selections.map((selection): Selection => {
-          const writeAt = selectionTopLeft(selection);
-          makeEdit((content) => {
-            return setCharAt(content.split("\n"), writeAt, e.key).join("\n");
-          });
-          return {
-            caret: { c: writeAt.c + 1, r: writeAt.r },
-          };
-        })
-      );
+      setSelections((selection) => {
+        const writeAt = selectionTopLeft(selection);
+        makeEdit((lines) => {
+          return setCharAt(lines, writeAt, e.key);
+        });
+        return {
+          caret: { c: writeAt.c + 1, r: writeAt.r },
+        };
+      });
 
       e.preventDefault();
       e.stopPropagation();
     });
-  }, [makeEdit, selections, setSelections]);
+  }, [makeEdit, setSelections]);
 
   useEffect(() => {
     const copyText = (e: ClipboardEvent) => {
@@ -352,21 +436,19 @@ export function MorphingLayout(props: Props) {
         copiedTexts = selections.map(() => copiedTexts.join("\n\n"));
       }
 
-      setSelections(
-        selections.map((selection, i) => {
-          const pasteLines = copiedTexts[i].split("\n");
-          const tl = selectionTopLeft(selection);
-          makeEdit((content) => {
-            return pasteAt(content.split("\n"), tl, pasteLines).join("\n");
-          });
-          return {
-            caret: {
-              r: tl.r + pasteLines.length - 1,
-              c: tl.c + pasteLines.slice(-1)[0].length,
-            },
-          };
-        })
-      );
+      setSelections((selection, i) => {
+        const pasteLines = copiedTexts[i].split("\n");
+        const tl = selectionTopLeft(selection);
+        makeEdit((lines) => {
+          return pasteAt(lines, tl, pasteLines);
+        });
+        return {
+          caret: {
+            r: tl.r + pasteLines.length - 1,
+            c: tl.c + pasteLines.slice(-1)[0].length,
+          },
+        };
+      });
 
       e.preventDefault();
     });
@@ -374,8 +456,8 @@ export function MorphingLayout(props: Props) {
 
   const drawBoxChar = useCallback(
     (caret: Caret, clear: boolean) => {
-      makeEdit((content) => {
-        return drawBoxCharAt(content.split("\n"), caret, clear).join("\n");
+      makeEdit((lines) => {
+        return drawBoxCharAt(lines, caret, clear);
       });
     },
     [makeEdit]
@@ -402,67 +484,46 @@ export function MorphingLayout(props: Props) {
           flexGrow: 1,
           position: "relative",
           lineHeight: `${CH}px`,
-          cursor: metaPressed
-            ? shiftPressed
-              ? "not-allowed"
-              : "cell"
-            : "text",
+          cursor: "text",
         }}
         onMouseDown={(e) => {
           const caret = getCaretPos(e);
-          if (e.metaKey) {
-            isDrawingBoxes.current = true;
-            setSelections([]);
-            drawBoxChar(caret, e.shiftKey);
-            e.stopPropagation();
-          } else if (e.altKey) {
-            console.log("add selection");
+          if (e.altKey) {
             addSelection({ caret, selecting: true });
-            e.stopPropagation();
           } else {
             setSelections([{ caret, selecting: true }]);
-            e.stopPropagation();
           }
+          e.stopPropagation();
         }}
         onMouseMove={(e) => {
           const caret = getCaretPos(e);
-          if (isDrawingBoxes.current) {
-            drawBoxChar(caret, e.shiftKey);
-            e.stopPropagation();
-          } else {
-            setSelections((selection) => {
-              if (!selection.selecting) {
-                return selection;
-              } else {
-                return normalizeSelection({
-                  anchor: selection.anchor ?? selection.caret,
-                  caret,
-                  selecting: true,
-                });
-              }
-            });
-            e.stopPropagation();
-          }
+          setSelections((selection) => {
+            if (!selection.selecting) {
+              return selection;
+            } else {
+              return normalizeSelection({
+                anchor: selection.anchor ?? selection.caret,
+                caret,
+                selecting: true,
+              });
+            }
+          });
+          e.stopPropagation();
         }}
         onMouseUp={(e) => {
           const caret = getCaretPos(e);
-          if (isDrawingBoxes.current) {
-            isDrawingBoxes.current = false;
-            e.stopPropagation();
-          } else {
-            setSelections((selection) => {
-              if (!selection.selecting) {
-                return selection;
-              } else {
-                return normalizeSelection({
-                  anchor: selection.anchor ?? selection.caret,
-                  caret,
-                  selecting: false,
-                });
-              }
-            });
-            e.stopPropagation();
-          }
+          setSelections((selection) => {
+            if (!selection.selecting) {
+              return selection;
+            } else {
+              return normalizeSelection({
+                anchor: selection.anchor ?? selection.caret,
+                caret,
+                selecting: false,
+              });
+            }
+          });
+          e.stopPropagation();
         }}
       >
         {selections.map((selection, i) => {
@@ -477,14 +538,16 @@ export function MorphingLayout(props: Props) {
                   position: "absolute",
                   zIndex: 30,
                   height: CH,
-                  width: 2,
-                  background: "var(--text)",
+                  width: selection.boxDrawingMode ? CW : 2,
+                  background: selection.boxDrawingMode
+                    ? "var(--selection)"
+                    : "var(--text)",
                   top: selection.caret.r * CH + pad,
                   left: selection.caret.c * CW + pad,
                 }}
               />
 
-              {bounds && (
+              {bounds && !selection.boxDrawingMode && (
                 <div
                   style={{
                     userSelect: "none",
@@ -590,12 +653,4 @@ function useEffectPrev(effect: any, deps: any) {
     prevDeps.current = deps;
     return cleanup;
   }, deps);
-}
-
-function range(startIncl: number, endExcl: number) {
-  return Array(endExcl - startIncl)
-    .fill(null)
-    .map((_, i) => {
-      return startIncl + i;
-    });
 }

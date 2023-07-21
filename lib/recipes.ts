@@ -8,7 +8,7 @@ export type Page = {
   slug: string;
   title: string;
   links: Record<string, string>;
-  content: string;
+  lines: string[];
 };
 
 export async function getRecipeSlugs() {
@@ -39,6 +39,6 @@ export async function getRecipe(slug: string): Promise<Page> {
       ...links,
       ["« Home"]: "/",
     },
-    content: content.replace(/^\n*/, ""),
+    lines: content.replace(/^\n*/, "").split("\n"),
   };
 }
