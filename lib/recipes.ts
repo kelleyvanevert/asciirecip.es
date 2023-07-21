@@ -1,8 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import matter from "gray-matter";
-
-const contentDir = path.join(process.cwd(), "content");
+import { directus } from "./directus";
 
 export type Page = {
   slug: string;
@@ -12,33 +10,85 @@ export type Page = {
 };
 
 export async function getRecipeSlugs() {
-  const filenames = await fs.readdir(contentDir);
+  const recipes = await directus.items("recipes").readByQuery({
+    limit: 9999,
+    fields: ["slug"],
 
-  return filenames
-    .filter((filename) => !/^[._]/.test(filename))
-    .map((filename) => filename.replace(".txt", ""));
+    // // Apparently doesn't work, for some reason...
+    // filter: {
+    //   slug: {
+    //     _nstarts_with: "_",
+    //   },
+    // },
+  });
+
+  if (!recipes.data) {
+    throw new Error("Could not get recipes");
+  }
+
+  const slugs = recipes.data
+    .filter((r) => !r.slug.startsWith("_"))
+    .map((r) => r.slug);
+
+  return slugs;
+}
+
+export async function getAllLinks() {
+  const recipes = await directus.items("recipes").readByQuery({
+    limit: 9999,
+    fields: ["slug", "title"],
+  });
+
+  if (!recipes.data) {
+    throw new Error("Could not get recipes");
+  }
+
+  const links = await directus.items("recipe_links").readByQuery({
+    limit: 9999,
+    fields: ["title", "url"],
+  });
+
+  if (!links.data) {
+    throw new Error("Could not get links");
+  }
+
+  return {
+    ...Object.fromEntries(
+      recipes.data
+        .filter((r) => r.slug !== "_404")
+        .map((r) => {
+          const link = r.slug === "_index" ? "/" : "/" + r.slug;
+
+          return [r.title, link];
+        })
+    ),
+    ...Object.fromEntries(
+      links.data.map((r) => {
+        return [r.title, r.url];
+      })
+    ),
+  };
 }
 
 export async function getRecipe(slug: string): Promise<Page> {
-  const filename = slug + ".txt";
+  const r = await directus.items("recipes").readByQuery({
+    filter: {
+      slug: { _eq: slug },
+    },
+  });
 
-  const filecontents = await fs.readFile(
-    path.join(contentDir, filename),
-    "utf8"
-  );
+  if (!r.data?.[0]) {
+    throw new Error(`Could not find recipe or page with slug: ${slug}`);
+  }
 
-  const {
-    data: { title, links = {} },
-    content,
-  } = matter(filecontents);
+  const recipe = r.data[0];
 
   return {
-    slug,
-    title,
+    ...recipe,
+    lines: recipe.content.replace(/^\n*/, "").split("\n"),
     links: {
-      ...links,
+      ...(await getAllLinks()),
       ["« Home"]: "/",
     },
-    lines: content.replace(/^\n*/, "").split("\n"),
   };
 }
