@@ -7,7 +7,7 @@ links:
   "Russian teacakes": "/russian_teacakes"
   "Tiramisu": "/tiramisu"
   "Poppy seed cake": "/poppy_seed_cake"
-  "Spinach enshiladas": "/spinach_enshiladas"
+  "Spinach enchiladas": "/spinach_enchiladas"
   "Pizza dough": "/pizza_dough"
   "Tim Holman's morphing effect": "https://tholman.com/post/ascii-morph/"
 ---
@@ -26,7 +26,7 @@ ASCII recipes
 
 
   SAVORY THINGS
-  * Spinach enshiladas
+  * Spinach enchiladas
   * Sophie's sweet potato tomato dish [TODO]
   * Pizza dough
 
