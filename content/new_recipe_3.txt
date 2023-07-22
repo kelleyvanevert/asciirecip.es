@@ -1,1 +1,5 @@
-Hellgo new recipe
+---
+title: "Some title"
+---
+
+Hello new rsdfecipe
