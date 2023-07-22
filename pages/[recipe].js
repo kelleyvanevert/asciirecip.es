@@ -1,8 +1,9 @@
-import { getRecipe, getRecipeSlugs } from "../lib/recipes";
+import { getAllLinks, getRecipe, getRecipeSlugs } from "../lib/recipes";
 import { MorphingLayout } from "../layouts/MorphingLayout";
 
 export async function getStaticProps({ params: { recipe: slug } }) {
   const page = await getRecipe(slug);
+  const links = await getAllLinks();
 
   if (!page) {
     return {
@@ -14,6 +15,7 @@ export async function getStaticProps({ params: { recipe: slug } }) {
   return {
     props: {
       page,
+      links,
     },
   };
 }

@@ -1,14 +1,13 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import yaml from "yaml";
 import matter from "gray-matter";
-import { Bounds } from "./text";
 
 const contentDir = path.join(process.cwd(), "content");
 
 export type Page = {
   slug: string;
   title: string;
-  links: Record<string, string | (() => void)>;
   lines: string[];
 };
 
@@ -16,8 +15,37 @@ export async function getRecipeSlugs() {
   const filenames = await fs.readdir(contentDir);
 
   return filenames
-    .filter((filename) => !/^[._]/.test(filename))
+    .filter((filename) => !filename.endsWith("_"))
+    .filter((filename) => filename.endsWith(".txt"))
     .map((filename) => filename.replace(".txt", ""));
+}
+
+export async function getAllLinks() {
+  const slugs = await getRecipeSlugs();
+
+  const recipeLinks = Object.fromEntries(
+    await Promise.all(
+      slugs.map(async (slug) => {
+        const filecontents = await fs.readFile(
+          path.join(contentDir, slug + ".txt"),
+          "utf8"
+        );
+        const {
+          data: { title },
+        } = matter(filecontents);
+        return [title as string, "/" + slug] as const;
+      })
+    )
+  );
+
+  const otherLinks = yaml.parse(
+    await fs.readFile(path.join(contentDir, "_config.yaml"), "utf8")
+  ).links;
+
+  return {
+    ...recipeLinks,
+    ...otherLinks,
+  };
 }
 
 export async function getRecipe(slug: string): Promise<Page> {
@@ -36,13 +64,6 @@ export async function getRecipe(slug: string): Promise<Page> {
   return {
     slug,
     title,
-    links: {
-      ...links,
-      ["« Home"]: "/",
-      ["ASCII recipes"]: "/",
-      ["⌂"]: "/",
-      [title]: slug.startsWith("_") ? "/" : "/" + slug,
-    },
     lines: [
       slug.startsWith("_") ? "ASCII recipes" : `ASCII recipes / ${title}`,
       "",

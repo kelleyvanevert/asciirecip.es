@@ -82,17 +82,9 @@ export async function getPage(slug: string) {
 export async function createOrUpdatePage(page: Page) {
   const curr = await getPage(page.slug);
 
-  const linkEntries = Object.entries(page.links);
-
-  const content = `---\ntitle: ${JSON.stringify(page.title)}\n${
-    linkEntries.length > 0
-      ? `links:\n${linkEntries
-          .map((e) => {
-            return `  ${JSON.stringify(e[0])}: ${JSON.stringify(e[1])}`;
-          })
-          .join("\n")}\n`
-      : ``
-  }---\n\n${page.lines.join("\n")}`;
+  const content = `---\ntitle: ${JSON.stringify(
+    page.title
+  )}\n---\n\n${page.lines.join("\n")}`;
 
   const res = await octokit
     .request("PUT /repos/{owner}/{repo}/contents/{path}", {

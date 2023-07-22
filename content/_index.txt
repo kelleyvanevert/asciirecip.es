@@ -1,16 +1,5 @@
 ---
 title: "ASCII recipes"
-links:
-  "ASCII recipes": "/"
-  "Kelley": "https://klve.nl"
-  "Gingerbread men": "/gingerbread_men"
-  "Russian teacakes": "/russian_teacakes"
-  "Tiramisu": "/tiramisu"
-  "Poppy seed cake": "/poppy_seed_cake"
-  "Spinach enchiladas": "/spinach_enchiladas"
-  "Pizza dough": "/pizza_dough"
-  "Tim Holman's morphing effect": "https://tholman.com/post/ascii-morph/"
-  "WIP": "https://github.com/kelleyvanevert/asciirecip.es"
 ---
 
 MOM's BAKING                                                                                               

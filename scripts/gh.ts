@@ -17,7 +17,6 @@ import {
     await createOrUpdatePage({
       slug: "new_recipe_3",
       title: "Some title",
-      links: {},
       lines: ["Hello new rsdfecipe"],
     })
   );
@@ -28,7 +27,6 @@ import {
     await createOrUpdatePage({
       slug: "new_recipe_3",
       title: "Some title",
-      links: {},
       lines: ["Hellgo new recipe", "new line"],
     })
   );
@@ -37,10 +35,6 @@ import {
     await createOrUpdatePage({
       slug: "new_recipe_3",
       title: "Some title",
-      links: {
-        kelley: "bla",
-        "Something else": "https://klve.nl/some space",
-      },
       lines: ["Hellgo new recipe", "next line", "", "bla"],
     })
   );

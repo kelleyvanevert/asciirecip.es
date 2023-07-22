@@ -1,7 +1,6 @@
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import Head from "next/head";
 import Link from "next/link";
-
 import { sandstorm, dissolve, asciiMorph, forModal } from "./morph_effects";
 import { Page } from "../lib/recipes";
 import { callEach, onEvent } from "../lib/onEvent";
@@ -34,11 +33,13 @@ const pad = CH;
 
 type Props = {
   page: Page;
+  links: Record<string, string>;
 };
 
-type Modal = Pick<Page, "lines" | "links"> & {
+type Modal = Pick<Page, "lines"> & {
   allowEditing?: Bounds;
   startWithSelections?: Selection[];
+  links: Record<string, () => void>;
 };
 
 function createSaveModal({
@@ -202,6 +203,7 @@ export function MorphingLayout(props: Props) {
   const { page, modal } = state;
   const selections = modal ? state.modalSelections : state.selections;
   const editBounds = modal?.allowEditing ?? { rmin: 3, cmin: 0 };
+  const links = { ...props.links, ...modal?.links };
 
   const [transitioning, setTransitioning] = useState<{
     i: number;
@@ -408,7 +410,6 @@ export function MorphingLayout(props: Props) {
   const longest = Math.max(...lines.map((line) => line.length));
   const maxCol = longest - 1;
   const maxRow = lines.length - 1;
-  const links = modal ? modal.links : page.links;
 
   const getCaretPos = (e: { clientX: number; clientY: number }): Caret => {
     const rect = ref.current!.getBoundingClientRect();
