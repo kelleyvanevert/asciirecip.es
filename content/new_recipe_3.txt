@@ -1,5 +1,0 @@
----
-title: "Some title"
----
-
-Hello new rsdfecipe
