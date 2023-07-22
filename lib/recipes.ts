@@ -15,7 +15,7 @@ export async function getRecipeSlugs() {
   const filenames = await fs.readdir(contentDir);
 
   return filenames
-    .filter((filename) => !filename.endsWith("_"))
+    .filter((filename) => !filename.startsWith("_"))
     .filter((filename) => filename.endsWith(".txt"))
     .map((filename) => filename.replace(".txt", ""));
 }

@@ -2,34 +2,38 @@
 title: "ASCII recipes"
 ---
 
-MOM's BAKING                                                                                               
-▔▔▔▔▔▔▔▔▔▔▔▔                                                     LOGGERHOF LIKES (todo todo)               
-* Gingerbread men                SAVORY THINGS                   ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔                           
-* Russian teacakes               ▔▔▔▔▔▔▔▔▔▔▔▔▔                   * Sophie's sweet potato tomato dish       
-* Tiramisu                       * Spinach enchiladas            * The fennel tomato orzo                  
-* Poppy seed cake                * Pizza dough                                                             
-                                                                 * Manca's peanut butter noodes            
-...                              ...                             * Elderflower pancakes                    
-                                                                                                           
-                                                                 * Cinnamon rolls                          
-        CHEN's QUICK & DELICIOUS DISHES                                                                    
-        ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔                          ...                                       
-        [coming soon]                                                                                      
-                                                                                                           
-                                                                                                           
-                                                                                                           
-                                                                                                           
-                                                                                                           
-────                                                                                                       
-                                                         ╭────────────────────────────────────────────╮    
-- A little hobby project of Kelley's                     │                                            │    
-   (and always a bit of a WIP)                           │   Oh and, you can make edits! :)           │    
-                                                         │                                            │    
-- The use of transitioning effects was inspired by       │   ⌘ + ←/↑/→/↓   draw boxes                 │    
-   Tim Holman's morphing effect (the one that            │   ⌘ + S         save edits                 │    
-   shrinks/expands the recipes)                          │   ⌘ + A         add new page (selection)   │    
-                                                         │   ⌘ + ⇧ + L     link (selection)           │    
-                                                         │   ⌥ + click     add selection              │    
-                                                         │                                            │    
-                                                         ╰────────────────────────────────────────────╯    
-                                                                                                           
+MOM's BAKING                                                                                                     
+▔▔▔▔▔▔▔▔▔▔▔▔                                                     LOGGERHOF LIKES (todo todo)                     
+* Gingerbread men                SAVORY THINGS                   ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔                                 
+* Russian teacakes               ▔▔▔▔▔▔▔▔▔▔▔▔▔                   * Sophie's sweet potato tomato dish             
+* Tiramisu                       * Spinach enchiladas            * The fennel tomato orzo                        
+* Poppy seed cake                * Pizza dough                                                                   
+                                                                 * Manca's peanut butter noodes                  
+...                              ...                             * Elderflower pancakes                          
+                                                                                                                 
+                                                                 * Cinnamon rolls                                
+        CHEN's QUICK & DELICIOUS DISHES                                                                          
+        ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔                          ...                                             
+        [coming soon]                                                                                            
+                                                                                                                 
+                                                                                                                 
+                                                                                                                 
+                                                                                                                 
+                                                                                                                 
+────                                                                                                             
+                                                         ╭────────────────────────────────────────────╮          
+- A little hobby project of Kelley's                     │                                            │          
+   (and always a bit of a WIP)                           │   Oh and, you can make edits! :)           │          
+                                                         │                                            │          
+- The use of transitioning effects was inspired by       │   ⌘ + ←/↑/→/↓   draw boxes                 │          
+   Tim Holman's morphing effect (the one that            │   ⌘ + S         save edits                 │          
+   shrinks/expands the recipes)                          │   ⌘ + A         add new page (selection)   │          
+                                                         │   ⌘ + ⇧ + L     link (selection)           │          
+                                                         │   ⌥ + click     add selection              │          
+                                                         │                                            │          
+                                                         │   The website acts like a wiki:            │          
+                                                         │    page titles get automatically linked,   │          
+                                                         │    and you add new pages by writing a      │          
+                                                         │    title and then linking it (⌘ + A).      │          
+                                                         │                                            │          
+                                                         ╰────────────────────────────────────────────╯          
