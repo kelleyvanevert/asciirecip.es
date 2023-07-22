@@ -33,8 +33,42 @@ type Props = {
   page: Page;
 };
 
+type Modal = {
+  title: string;
+  lines: string;
+  anchor: Caret;
+  width: number;
+  height: number;
+};
+
+const SaveModal = `
+╭──────────────────────────────────────╮
+│ ░░░░░░░░░░░░ Save page? ░░░░░░░░░░░░ │
+├──────────────────────────────────────┤
+│                                      │
+│ You can also update the title        │
+│  of the page if you want:            │
+│                                      │
+│ ┌──────────────────────────────────┐ │
+│ │ Title of this page               │ │
+│ └──────────────────────────────────┘ │
+│                                      │
+│        [SAVE]        [CANCEL]        │
+╰──────────────────────────────────────╯
+`
+  .trim()
+  .split("\n");
+
 export function MorphingLayout(props: Props) {
-  const isDarkMode = useDarkMode();
+  useDarkMode();
+
+  useEffect(() => {
+    (window as any).debug = {
+      disableTransitions: false,
+    };
+    console.log("See window.debug");
+  }, []);
+
   const ref = useRef<HTMLPreElement>(null);
 
   const [state, setState] = useState<{
@@ -46,7 +80,12 @@ export function MorphingLayout(props: Props) {
   });
   const { page, selections } = state;
 
-  const [transitioning, setTransitioning] = useState<{ content: string }>();
+  const [modal, setModal] = useState<Modal>();
+
+  const [transitioning, setTransitioning] = useState<{
+    i: number;
+    frames: string[];
+  }>();
   const [isDrawingBoxes, setDrawingBoxes] = useState(false);
 
   const altPressed = useKeyPressed("Alt");
@@ -113,40 +152,43 @@ export function MorphingLayout(props: Props) {
 
   useEffectPrev(
     ([prevPage]: [Page]) => {
-      let timely = true;
-
       if (prevPage && prevPage.slug !== props.page.slug) {
-        setSelections([]);
-
         const randomEffect =
           effects[Math.floor(Math.random() * effects.length)];
 
         const frames = randomEffect(prevPage.lines, props.page.lines);
 
-        const ms = 500 / frames.length;
-
-        function tick() {
-          if (!timely) return;
-
-          if (frames.length === 0) {
-            setTransitioning(undefined);
-            setState({ page: props.page, selections: [] });
-          } else {
-            const frame = frames.shift();
-            setTransitioning({ content: frame.join("\n") });
-            setTimeout(tick, ms);
-          }
+        if (!(window as any).debug?.disableTransitions) {
+          setTransitioning({
+            i: 0,
+            frames: frames.map((frame) => frame.join("\n")),
+          });
         }
 
-        tick();
+        setState({ page: props.page, selections: [] });
       }
-
-      return () => {
-        timely = false;
-      };
     },
-    [props.page, setSelections, setTransitioning]
+    [props.page, setState, setTransitioning]
   );
+
+  useEffect(() => {
+    if (!transitioning) return;
+
+    const ms = 500 / transitioning.frames.length;
+
+    const t = setTimeout(() => {
+      setTransitioning((tr) => {
+        if (!tr) return;
+
+        const i = tr.i + 1;
+        if (i >= tr.frames.length) return;
+
+        return { ...tr, i };
+      });
+    }, ms);
+
+    return () => clearTimeout(t);
+  }, [transitioning?.i]);
 
   const lines = page.lines;
   const longest = Math.max(...lines.map((line) => line.length));
@@ -567,7 +609,7 @@ export function MorphingLayout(props: Props) {
         })}
 
         {transitioning ? (
-          transitioning.content
+          transitioning.frames[transitioning.i]
         ) : (
           <Fragment key={page.slug}>
             {lines.map((line, i) => {

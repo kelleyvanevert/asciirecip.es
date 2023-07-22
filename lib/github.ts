@@ -2,6 +2,7 @@ import pkg from "../package.json";
 import { Octokit } from "@octokit/core";
 import { RequestError } from "@octokit/request-error";
 import { token } from "./config";
+import { Page } from "./recipes";
 
 const gh = {
   branch: process.env.NODE_ENV === "production" ? "main" : "test",
@@ -78,28 +79,32 @@ export async function getPage(slug: string) {
   return res.data as GithubFile;
 }
 
-export async function createOrUpdatePage(
-  slug: string,
-  title: string,
-  lines: string[]
-) {
-  const page = await getPage(slug);
+export async function createOrUpdatePage(page: Page) {
+  const curr = await getPage(page.slug);
 
-  const content = `---\ntitle: ${JSON.stringify(title)}\n---\n\n${lines.join(
-    "\n"
-  )}`;
+  const linkEntries = Object.entries(page.links);
+
+  const content = `---\ntitle: ${JSON.stringify(page.title)}\n${
+    linkEntries.length > 0
+      ? `links:\n${linkEntries
+          .map((e) => {
+            return `  ${JSON.stringify(e[0])}: ${JSON.stringify(e[1])}`;
+          })
+          .join("\n")}\n`
+      : ``
+  }---\n\n${page.lines.join("\n")}`;
 
   const res = await octokit
     .request("PUT /repos/{owner}/{repo}/contents/{path}", {
       ...gh,
-      path: "content/" + slug + ".txt",
-      message: `Upsert ${slug}`,
+      path: "content/" + page.slug + ".txt",
+      message: `Upsert ${page.slug}`,
       committer: {
         name: "Kelley van Evert",
         email: "hello@klve.nl",
       },
       content: Buffer.from(content).toString("base64"),
-      sha: page?.sha,
+      sha: curr?.sha,
     })
     .catch((error) => {
       throw new Error(`Could not get pages: ${error.message}`, {

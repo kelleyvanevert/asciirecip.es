@@ -14,27 +14,35 @@ import {
   console.log("get page:", await getPage("new_reipe_3"));
 
   console.log(
-    await createOrUpdatePage("new_recipe_3", "Some title", [
-      "Hello new rsdfecipe",
-    ])
+    await createOrUpdatePage({
+      slug: "new_recipe_3",
+      title: "Some title",
+      links: {},
+      lines: ["Hello new rsdfecipe"],
+    })
   );
 
   console.log(await deletePage("new_recipe_3"));
 
   console.log(
-    await createOrUpdatePage("new_recipe_3", "Some title", [
-      "Hellgo new recipe",
-      "new line",
-    ])
+    await createOrUpdatePage({
+      slug: "new_recipe_3",
+      title: "Some title",
+      links: {},
+      lines: ["Hellgo new recipe", "new line"],
+    })
   );
 
   console.log(
-    await createOrUpdatePage("new_recipe_3", "Some title", [
-      "Hellgo new recipe",
-      "next line",
-      "",
-      "bla",
-    ])
+    await createOrUpdatePage({
+      slug: "new_recipe_3",
+      title: "Some title",
+      links: {
+        kelley: "bla",
+        "Something else": "https://klve.nl/some space",
+      },
+      lines: ["Hellgo new recipe", "next line", "", "bla"],
+    })
   );
 
   console.log(
