@@ -1,6 +1,11 @@
 ---
 title: "Some title"
+links:
+  "kelley": "bla"
+  "Something else": "https://klve.nl/some space"
 ---
 
 Hellgo new recipe
-new line
+next line
+
+bla
