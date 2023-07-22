@@ -2,7 +2,7 @@ import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import Head from "next/head";
 import Link from "next/link";
 
-import { sandstorm, dissolve, asciiMorph } from "./morph_effects";
+import { sandstorm, dissolve, asciiMorph, forModal } from "./morph_effects";
 import { Page } from "../lib/recipes";
 import { callEach, onEvent } from "../lib/onEvent";
 import {
@@ -21,6 +21,8 @@ import {
 } from "../lib/text";
 import { useKeyPressed } from "../lib/useKeyPressed";
 import { useDarkMode } from "../lib/useDarkMode";
+import { padAround } from "./morph_effects/lib";
+import { Modal, placeModal } from "../lib/modal";
 
 const effects = [sandstorm, dissolve, asciiMorph];
 
@@ -33,31 +35,39 @@ type Props = {
   page: Page;
 };
 
-type Modal = {
-  title: string;
-  lines: string;
-  anchor: Caret;
-  width: number;
-  height: number;
-};
-
-const SaveModal = `
+const SaveModal = padAround(
+  `
 ╭──────────────────────────────────────╮
-│ ░░░░░░░░░░░░ Save page? ░░░░░░░░░░░░ │
+│ ░░░░░░░░░░ Save changes? ░░░░░░░░░░░ │
 ├──────────────────────────────────────┤
 │                                      │
-│ You can also update the title        │
-│  of the page if you want:            │
+│ This will save all of your local     │
+│  changes (also of other recipes).    │
 │                                      │
-│ ┌──────────────────────────────────┐ │
-│ │ Title of this page               │ │
-│ └──────────────────────────────────┘ │
+│              Continue?               │
 │                                      │
 │        [SAVE]        [CANCEL]        │
-╰──────────────────────────────────────╯
-`
-  .trim()
-  .split("\n");
+╰──────────────────────────────────────╯`
+    .trim()
+    .split("\n")
+);
+
+const CreateNewPageModal = padAround(
+  `
+╭──────────────────────────────────────╮
+│ ░░░░░░░░░ Create new page ░░░░░░░░░░ │
+├──────────────────────────────────────┤
+│                                      │
+│ Create this new page?                │
+│ ┌──────────────────────────────────┐ │
+│ │                                  │ │
+│ └──────────────────────────────────┘ │
+│                                      │
+│        [CREATE]      [CANCEL]        │
+╰──────────────────────────────────────╯`
+    .trim()
+    .split("\n")
+);
 
 export function MorphingLayout(props: Props) {
   useDarkMode();
@@ -74,16 +84,16 @@ export function MorphingLayout(props: Props) {
   const [state, setState] = useState<{
     page: Page;
     selections: Selection[];
+    modal?: Modal;
   }>({
     page: props.page,
     selections: [],
   });
-  const { page, selections } = state;
-
-  const [modal, setModal] = useState<Modal>();
+  const { page, modal, selections } = state;
 
   const [transitioning, setTransitioning] = useState<{
     i: number;
+    duration: number;
     frames: string[];
   }>();
   const [isDrawingBoxes, setDrawingBoxes] = useState(false);
@@ -102,6 +112,8 @@ export function MorphingLayout(props: Props) {
         | Selection[]
     ) => {
       setState((state) => {
+        if (state.modal) return state;
+
         if (typeof action === "function") {
           return {
             ...state,
@@ -153,14 +165,19 @@ export function MorphingLayout(props: Props) {
   useEffectPrev(
     ([prevPage]: [Page]) => {
       if (prevPage && prevPage.slug !== props.page.slug) {
+        // const randomEffect = forModal;
         const randomEffect =
           effects[Math.floor(Math.random() * effects.length)];
 
-        const frames = randomEffect(prevPage.lines, props.page.lines);
+        const { frames, duration } = randomEffect(
+          prevPage.lines,
+          props.page.lines
+        );
 
         if (!(window as any).debug?.disableTransitions) {
           setTransitioning({
             i: 0,
+            duration,
             frames: frames.map((frame) => frame.join("\n")),
           });
         }
@@ -174,7 +191,7 @@ export function MorphingLayout(props: Props) {
   useEffect(() => {
     if (!transitioning) return;
 
-    const ms = 500 / transitioning.frames.length;
+    const ms = transitioning.duration / transitioning.frames.length;
 
     const t = setTimeout(() => {
       setTransitioning((tr) => {
@@ -190,10 +207,75 @@ export function MorphingLayout(props: Props) {
     return () => clearTimeout(t);
   }, [transitioning?.i]);
 
-  const lines = page.lines;
+  const closeModal = useCallback(() => {
+    setState((state) => {
+      if (!state.modal) return state;
+
+      const { frames, duration } = forModal(
+        state.modal.lines,
+        state.page.lines
+      );
+
+      if (!(window as any).debug?.disableTransitions) {
+        setTransitioning({
+          i: 0,
+          duration,
+          frames: frames.map((frame) => frame.join("\n")),
+        });
+      }
+
+      return {
+        ...state,
+        modal: undefined,
+      };
+    });
+  }, [setState, setTransitioning]);
+
+  const openModal = useCallback(
+    (modalBoxLines: string[]) => {
+      setState((state) => {
+        if (state.modal) return state;
+
+        const modal = placeModal(state.page, { c: 13, r: 8 }, modalBoxLines, {
+          "[CANCEL]"() {
+            closeModal();
+          },
+          "[CREATE]"() {
+            closeModal();
+            console.log("TODO save");
+          },
+          "[SAVE]"() {
+            closeModal();
+            console.log("TODO save");
+          },
+        });
+
+        const { frames, duration } = forModal(state.page.lines, modal.lines);
+
+        if (!(window as any).debug?.disableTransitions) {
+          setTransitioning({
+            i: 0,
+            duration,
+            frames: frames.map((frame) => frame.join("\n")),
+          });
+        }
+
+        window.scrollTo({ top: 0, behavior: "smooth" });
+
+        return {
+          ...state,
+          modal,
+        };
+      });
+    },
+    [setState, closeModal, setTransitioning]
+  );
+
+  const lines = modal?.lines ?? page.lines;
   const longest = Math.max(...lines.map((line) => line.length));
   const maxCol = longest - 1;
   const maxRow = lines.length - 1;
+  const links = modal ? modal.actions : page.links;
 
   const getCaretPos = (e: { clientX: number; clientY: number }): Caret => {
     const rect = ref.current!.getBoundingClientRect();
@@ -386,12 +468,53 @@ export function MorphingLayout(props: Props) {
           e.stopPropagation();
           break;
         }
+        case "s": {
+          if (e.metaKey) {
+            openModal(SaveModal);
+            e.preventDefault();
+            e.stopPropagation();
+          }
+          break;
+        }
+        case "l": {
+          if (e.metaKey) {
+            if (selections.length === 1) {
+              const { top, left, height, width } = getSelectionBounds(
+                selections[0]
+              );
+              if (height === 1) {
+                const newPageTitle = lines[top]
+                  .slice(left, left + width)
+                  .trim();
+                openModal(
+                  pasteAt(CreateNewPageModal, { c: 5, r: 6 }, [newPageTitle])
+                );
+                e.preventDefault();
+                e.stopPropagation();
+              }
+            }
+          }
+          break;
+        }
+        case "Escape": {
+          closeModal();
+          e.preventDefault();
+          e.stopPropagation();
+        }
         // default: {
         //   console.log(e.key);
         // }
       }
     });
-  }, [moveCaret, setSelections, makeEdit, expandOrAddExtraCaret]);
+  }, [
+    moveCaret,
+    selections,
+    setSelections,
+    makeEdit,
+    openModal,
+    closeModal,
+    expandOrAddExtraCaret,
+  ]);
 
   useEffect(() => {
     return onEvent(window, "keypress", (e) => {
@@ -568,45 +691,46 @@ export function MorphingLayout(props: Props) {
           e.stopPropagation();
         }}
       >
-        {selections.map((selection, i) => {
-          const bounds = getSelectionBounds(selection);
+        {!modal &&
+          selections.map((selection, i) => {
+            const bounds = getSelectionBounds(selection);
 
-          return (
-            <Fragment key={i}>
-              <div
-                style={{
-                  userSelect: "none",
-                  pointerEvents: "none",
-                  position: "absolute",
-                  zIndex: 30,
-                  height: CH,
-                  width: selection.boxDrawingMode ? CW : 2,
-                  background: selection.boxDrawingMode
-                    ? "var(--selection)"
-                    : "var(--text)",
-                  top: selection.caret.r * CH + pad,
-                  left: selection.caret.c * CW + pad,
-                }}
-              />
-
-              {bounds && !selection.boxDrawingMode && (
+            return (
+              <Fragment key={i}>
                 <div
                   style={{
                     userSelect: "none",
                     pointerEvents: "none",
                     position: "absolute",
-                    zIndex: 25,
-                    height: CH * bounds.height,
-                    width: CW * bounds.width + 2,
-                    background: "var(--selection)",
-                    top: bounds.top * CH + pad,
-                    left: bounds.left * CW + pad,
+                    zIndex: 30,
+                    height: CH,
+                    width: selection.boxDrawingMode ? CW : 2,
+                    background: selection.boxDrawingMode
+                      ? "var(--selection)"
+                      : "var(--text)",
+                    top: selection.caret.r * CH + pad,
+                    left: selection.caret.c * CW + pad,
                   }}
                 />
-              )}
-            </Fragment>
-          );
-        })}
+
+                {bounds && !selection.boxDrawingMode && (
+                  <div
+                    style={{
+                      userSelect: "none",
+                      pointerEvents: "none",
+                      position: "absolute",
+                      zIndex: 25,
+                      height: CH * bounds.height,
+                      width: CW * bounds.width + 2,
+                      background: "var(--selection)",
+                      top: bounds.top * CH + pad,
+                      left: bounds.left * CW + pad,
+                    }}
+                  />
+                )}
+              </Fragment>
+            );
+          })}
 
         {transitioning ? (
           transitioning.frames[transitioning.i]
@@ -615,12 +739,10 @@ export function MorphingLayout(props: Props) {
             {lines.map((line, i) => {
               return (
                 <div key={i} style={{ height: CH }}>
-                  {tokenizeLine(line, page.links).map((token, i) => {
+                  {tokenizeLine(line, links).map((token, i) => {
                     if (token.type === "text") {
                       return <span key={i}>{token.text}</span>;
                     } else {
-                      const outgoing = !token.to.startsWith("/");
-
                       return <LinkEl key={i} to={token.to} text={token.text} />;
                     }
                   })}
@@ -634,13 +756,13 @@ export function MorphingLayout(props: Props) {
   );
 }
 
-function LinkEl({ to = "", text = "" }) {
+function LinkEl({ to, text }: { text: string; to: string | (() => void) }) {
   const isClicking = useRef(false);
 
   return (
     <Link
       className="link"
-      href={to}
+      href={typeof to === "string" ? to : ""}
       onMouseDown={(e) => {
         isClicking.current = true;
         e.stopPropagation();
@@ -652,6 +774,13 @@ function LinkEl({ to = "", text = "" }) {
         }
         isClicking.current = false;
       }}
+      onClick={(e) => {
+        if (typeof to === "function") {
+          e.preventDefault();
+          e.stopPropagation();
+          to();
+        }
+      }}
     >
       {text}
     </Link>
@@ -660,14 +789,17 @@ function LinkEl({ to = "", text = "" }) {
 
 type Token =
   | { type: "text"; text: string }
-  | { type: "link"; text: string; to: string };
+  | { type: "link"; text: string; to: string | (() => void) };
 
-function tokenizeLine(line: string, links: Record<string, string>): Token[] {
+function tokenizeLine(
+  line: string,
+  links: Record<string, string | (() => void)>
+): Token[] {
   if (line.length === 0) {
     return [];
   }
 
-  const found = Object.entries(links)
+  const foundLink = Object.entries(links)
     .map(([text, to]) => {
       const i = line.indexOf(text);
       return i >= 0 && ([i, text, to] as const);
@@ -675,9 +807,9 @@ function tokenizeLine(line: string, links: Record<string, string>): Token[] {
     .filter((b): b is [number, string, string] => !!b)
     .sort((a, b) => a[0] - b[0]);
 
-  if (found[0]) {
+  if (foundLink[0]) {
     const tokens: Token[] = [];
-    const [i, text, to] = found[0];
+    const [i, text, to] = foundLink[0];
     if (i > 0) {
       tokens.push({ type: "text", text: line.slice(0, i) });
     }

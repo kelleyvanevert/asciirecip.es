@@ -1,6 +1,6 @@
-import { max, getDim, isEmpty, rand, squareOut } from "./lib";
+import { max, getDim, isEmpty, rand, squareOut, TransitionSpec } from "./lib";
 
-function step(im) {
+function step(im: string[]) {
   return im.map((line) => {
     const newline = line
       .split("")
@@ -19,7 +19,7 @@ function step(im) {
   });
 }
 
-export function dissolve(ima, imb) {
+export function dissolve(ima: string[], imb: string[]): TransitionSpec {
   const dim = max(getDim(ima), getDim(imb));
 
   ima = squareOut(ima, dim);
@@ -37,5 +37,8 @@ export function dissolve(ima, imb) {
     fadeIn.push(imb);
   }
 
-  return fadeOut.slice(0, -1).concat(fadeIn.reverse().slice(1));
+  return {
+    frames: fadeOut.slice(0, -1).concat(fadeIn.reverse().slice(1)),
+    duration: 500,
+  };
 }

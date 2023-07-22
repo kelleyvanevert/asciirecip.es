@@ -18,7 +18,10 @@ export function asciiMorph(ima, imb) {
     morphIn.push(imb);
   }
 
-  return morphOut.slice(0, -1).concat(morphIn.reverse().slice(1));
+  return {
+    frames: morphOut.slice(0, -1).concat(morphIn.reverse().slice(1)),
+    duration: 500,
+  };
 }
 
 function getMorphedFrame(lines, dim) {

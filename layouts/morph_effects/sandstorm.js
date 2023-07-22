@@ -69,23 +69,26 @@ export function sandstorm(ima, imb) {
 
   const emptyFrame = squareOut([], dim);
 
-  return [
-    squareOut(ima, dim),
-    ...Array(len)
-      .fill(null)
-      .map((_, i) => {
-        let frame = emptyFrame;
-        for (const path of paths) {
-          const p = round(path[i]);
-          // const dirChar = combineDirChars(get(frame, p), dirChars[path[i].dir]);
-          frame = set(
-            frame,
-            p,
-            i / len >= path._data.swapAt ? path._data.cb : path._data.ca
-          );
-        }
-        return frame;
-      }),
-    squareOut(imb, dim),
-  ];
+  return {
+    frames: [
+      squareOut(ima, dim),
+      ...Array(len)
+        .fill(null)
+        .map((_, i) => {
+          let frame = emptyFrame;
+          for (const path of paths) {
+            const p = round(path[i]);
+            // const dirChar = combineDirChars(get(frame, p), dirChars[path[i].dir]);
+            frame = set(
+              frame,
+              p,
+              i / len >= path._data.swapAt ? path._data.cb : path._data.ca
+            );
+          }
+          return frame;
+        }),
+      squareOut(imb, dim),
+    ],
+    duration: 500,
+  };
 }
