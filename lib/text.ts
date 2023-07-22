@@ -68,6 +68,7 @@ export function removeDuplicateSelections(
       selection.caret.c,
       selection.boxDrawingMode ? "B" : "|",
       selection.anchor ? "A" : "_",
+      selection.selecting ? "S" : "_",
     ].join("_");
 
     if (keys[key]) {
