@@ -18,11 +18,12 @@ import {
   constrainCaret,
   removeDuplicateSelections,
   expandSelection,
+  Bounds,
+  editWithinBounds,
 } from "../lib/text";
 import { useKeyPressed } from "../lib/useKeyPressed";
 import { useDarkMode } from "../lib/useDarkMode";
-import { padAround } from "./morph_effects/lib";
-import { Modal, placeModal } from "../lib/modal";
+import { blur, padAround } from "./morph_effects/lib";
 
 const effects = [sandstorm, dissolve, asciiMorph];
 
@@ -35,8 +36,20 @@ type Props = {
   page: Page;
 };
 
-const SaveModal = padAround(
-  `
+type Modal = Pick<Page, "lines" | "links"> & {
+  allowEditing?: Bounds;
+  startWithSelections?: Selection[];
+};
+
+function createSaveModal({
+  currentPage,
+  onClose,
+}: {
+  currentPage: Page;
+  onClose: () => void;
+}): Modal {
+  const lines = padAround(
+    `
 ╭──────────────────────────────────────╮
 │ ░░░░░░░░░░ Save changes? ░░░░░░░░░░░ │
 ├──────────────────────────────────────┤
@@ -48,26 +61,74 @@ const SaveModal = padAround(
 │                                      │
 │        [SAVE]        [CANCEL]        │
 ╰──────────────────────────────────────╯`
-    .trim()
-    .split("\n")
-);
+      .trim()
+      .split("\n")
+  );
 
-const CreateNewPageModal = padAround(
-  `
+  return {
+    lines: pasteAt(blur(currentPage.lines), { c: 13, r: 8 }, lines),
+    links: {
+      "[CANCEL]": onClose,
+      "[SAVE]"() {
+        // closeModal();
+        console.log("TODO save");
+      },
+    },
+  };
+}
+
+function addNewPageModal({
+  currentPage,
+  newPageTitle,
+  onClose,
+}: {
+  currentPage: Page;
+  newPageTitle: string;
+  onClose: () => void;
+}): Modal {
+  const lines = pasteAt(
+    padAround(
+      `
 ╭──────────────────────────────────────╮
-│ ░░░░░░░░░ Create new page ░░░░░░░░░░ │
+│ ░░░░░░░░░░░ Add new page ░░░░░░░░░░░ │
 ├──────────────────────────────────────┤
 │                                      │
-│ Create this new page?                │
+│ Add this new page?                   │
 │ ┌──────────────────────────────────┐ │
 │ │                                  │ │
 │ └──────────────────────────────────┘ │
 │                                      │
-│        [CREATE]      [CANCEL]        │
+│          [ADD]       [CANCEL]        │
 ╰──────────────────────────────────────╯`
-    .trim()
-    .split("\n")
-);
+        .trim()
+        .split("\n")
+    ),
+    { c: 5, r: 6 },
+    [newPageTitle]
+  );
+
+  return {
+    lines: pasteAt(blur(currentPage.lines), { c: 13, r: 8 }, lines),
+    links: {
+      ["[ADD]"]: onClose,
+      ["[CANCEL]"]: onClose,
+    },
+    allowEditing: {
+      cmin: 13 + 5,
+      rmin: 8 + 6,
+      cmax: 13 + 37,
+      rmax: 8 + 6,
+    },
+    startWithSelections: [
+      {
+        caret: {
+          r: 8 + 6,
+          c: 13 + 5 + newPageTitle.length,
+        },
+      },
+    ],
+  };
+}
 
 export function MorphingLayout(props: Props) {
   useDarkMode();
@@ -85,11 +146,15 @@ export function MorphingLayout(props: Props) {
     page: Page;
     selections: Selection[];
     modal?: Modal;
+    modalSelections: Selection[];
   }>({
     page: props.page,
     selections: [],
+    modalSelections: [],
   });
-  const { page, modal, selections } = state;
+  const { page, modal } = state;
+  const selections = modal ? state.modalSelections : state.selections;
+  const editBounds = modal?.allowEditing ?? { rmin: 3, cmin: 0 };
 
   const [transitioning, setTransitioning] = useState<{
     i: number;
@@ -112,7 +177,26 @@ export function MorphingLayout(props: Props) {
         | Selection[]
     ) => {
       setState((state) => {
-        if (state.modal) return state;
+        if (state.modal) {
+          if (!state.modal.allowEditing) {
+            return state;
+          } else if (typeof action === "function") {
+            return {
+              ...state,
+              modalSelections: removeDuplicateSelections(
+                state.modalSelections
+                  ?.flatMap(action)
+                  .filter((s): s is Selection => !!s)
+                  .map((s) => normalizeSelection(s, state.modal!.allowEditing))
+              ),
+            };
+          } else {
+            return {
+              ...state,
+              modalSelections: action,
+            };
+          }
+        }
 
         if (typeof action === "function") {
           return {
@@ -121,7 +205,7 @@ export function MorphingLayout(props: Props) {
               state.selections
                 ?.flatMap(action)
                 .filter((s): s is Selection => !!s)
-                .map(normalizeSelection)
+                .map((s) => normalizeSelection(s, { rmin: 3 }))
             ),
           };
         } else {
@@ -150,16 +234,31 @@ export function MorphingLayout(props: Props) {
   const makeEdit = useCallback(
     (edit: (lines: string[]) => string[]) => {
       setState((state) => {
+        if (state.modal) {
+          if (!state.modal.allowEditing) {
+            return state;
+          } else {
+            // enforce?
+            return {
+              ...state,
+              modal: {
+                ...state.modal,
+                lines: editWithinBounds(editBounds, edit, state.modal.lines),
+              },
+            };
+          }
+        }
+
         return {
           ...state,
           page: {
             ...state.page,
-            lines: edit(state.page.lines),
+            lines: editWithinBounds(editBounds, edit, state.page.lines),
           },
         };
       });
     },
-    [setState]
+    [setState, editBounds]
   );
 
   useEffectPrev(
@@ -182,7 +281,7 @@ export function MorphingLayout(props: Props) {
           });
         }
 
-        setState({ page: props.page, selections: [] });
+        setState({ page: props.page, selections: [], modalSelections: [] });
       }
     },
     [props.page, setState, setTransitioning]
@@ -232,23 +331,9 @@ export function MorphingLayout(props: Props) {
   }, [setState, setTransitioning]);
 
   const openModal = useCallback(
-    (modalBoxLines: string[]) => {
+    (modal: Modal) => {
       setState((state) => {
         if (state.modal) return state;
-
-        const modal = placeModal(state.page, { c: 13, r: 8 }, modalBoxLines, {
-          "[CANCEL]"() {
-            closeModal();
-          },
-          "[CREATE]"() {
-            closeModal();
-            console.log("TODO save");
-          },
-          "[SAVE]"() {
-            closeModal();
-            console.log("TODO save");
-          },
-        });
 
         const { frames, duration } = forModal(state.page.lines, modal.lines);
 
@@ -265,6 +350,7 @@ export function MorphingLayout(props: Props) {
         return {
           ...state,
           modal,
+          modalSelections: modal.startWithSelections ?? [],
         };
       });
     },
@@ -275,13 +361,17 @@ export function MorphingLayout(props: Props) {
   const longest = Math.max(...lines.map((line) => line.length));
   const maxCol = longest - 1;
   const maxRow = lines.length - 1;
-  const links = modal ? modal.actions : page.links;
+  const links = modal ? modal.links : page.links;
 
   const getCaretPos = (e: { clientX: number; clientY: number }): Caret => {
     const rect = ref.current!.getBoundingClientRect();
-    const c = Math.max(0, Math.round((e.clientX - rect.x - pad) / CW));
-    const r = Math.max(0, Math.floor((e.clientY - rect.y - pad) / CH));
-    return { c, r };
+    return constrainCaret(
+      {
+        r: Math.floor((e.clientY - rect.y - pad) / CH),
+        c: Math.round((e.clientX - rect.x - pad) / CW),
+      },
+      editBounds
+    );
   };
 
   const moveCaret = useCallback(
@@ -470,13 +560,15 @@ export function MorphingLayout(props: Props) {
         }
         case "s": {
           if (e.metaKey) {
-            openModal(SaveModal);
+            openModal(
+              createSaveModal({ currentPage: page, onClose: closeModal })
+            );
             e.preventDefault();
             e.stopPropagation();
           }
           break;
         }
-        case "l": {
+        case "a": {
           if (e.metaKey) {
             if (selections.length === 1) {
               const { top, left, height, width } = getSelectionBounds(
@@ -486,11 +578,18 @@ export function MorphingLayout(props: Props) {
                 const newPageTitle = lines[top]
                   .slice(left, left + width)
                   .trim();
-                openModal(
-                  pasteAt(CreateNewPageModal, { c: 5, r: 6 }, [newPageTitle])
-                );
-                e.preventDefault();
-                e.stopPropagation();
+
+                if (newPageTitle.length > 0) {
+                  openModal(
+                    addNewPageModal({
+                      currentPage: page,
+                      newPageTitle,
+                      onClose: closeModal,
+                    })
+                  );
+                  e.preventDefault();
+                  e.stopPropagation();
+                }
               }
             }
           }
@@ -507,6 +606,8 @@ export function MorphingLayout(props: Props) {
       }
     });
   }, [
+    page,
+    modal,
     moveCaret,
     selections,
     setSelections,
@@ -523,6 +624,7 @@ export function MorphingLayout(props: Props) {
         makeEdit((lines) => {
           return setCharAt(lines, writeAt, e.key);
         });
+
         return {
           caret: { c: writeAt.c + 1, r: writeAt.r },
         };
@@ -531,7 +633,7 @@ export function MorphingLayout(props: Props) {
       e.preventDefault();
       e.stopPropagation();
     });
-  }, [makeEdit, setSelections]);
+  }, [makeEdit, setSelections, editBounds]);
 
   useEffect(() => {
     const copyText = (e: ClipboardEvent) => {
@@ -619,15 +721,6 @@ export function MorphingLayout(props: Props) {
     });
   }, [makeEdit, selections, setSelections]);
 
-  const drawBoxChar = useCallback(
-    (caret: Caret, clear: boolean) => {
-      makeEdit((lines) => {
-        return drawBoxCharAt(lines, caret, clear);
-      });
-    },
-    [makeEdit]
-  );
-
   return (
     <main
       style={{
@@ -653,7 +746,7 @@ export function MorphingLayout(props: Props) {
         }}
         onMouseDown={(e) => {
           const caret = getCaretPos(e);
-          if (e.altKey) {
+          if (e.altKey && !modal) {
             addSelection({ caret, selecting: true });
           } else {
             setSelections([{ caret, selecting: true }]);
@@ -691,46 +784,45 @@ export function MorphingLayout(props: Props) {
           e.stopPropagation();
         }}
       >
-        {!modal &&
-          selections.map((selection, i) => {
-            const bounds = getSelectionBounds(selection);
+        {selections.map((selection, i) => {
+          const bounds = getSelectionBounds(selection);
 
-            return (
-              <Fragment key={i}>
+          return (
+            <Fragment key={i}>
+              <div
+                style={{
+                  userSelect: "none",
+                  pointerEvents: "none",
+                  position: "absolute",
+                  zIndex: 30,
+                  height: CH,
+                  width: selection.boxDrawingMode ? CW : 2,
+                  background: selection.boxDrawingMode
+                    ? "var(--selection)"
+                    : "var(--text)",
+                  top: selection.caret.r * CH + pad,
+                  left: selection.caret.c * CW + pad,
+                }}
+              />
+
+              {bounds && !selection.boxDrawingMode && (
                 <div
                   style={{
                     userSelect: "none",
                     pointerEvents: "none",
                     position: "absolute",
-                    zIndex: 30,
-                    height: CH,
-                    width: selection.boxDrawingMode ? CW : 2,
-                    background: selection.boxDrawingMode
-                      ? "var(--selection)"
-                      : "var(--text)",
-                    top: selection.caret.r * CH + pad,
-                    left: selection.caret.c * CW + pad,
+                    zIndex: 25,
+                    height: CH * bounds.height,
+                    width: CW * bounds.width + 2,
+                    background: "var(--selection)",
+                    top: bounds.top * CH + pad,
+                    left: bounds.left * CW + pad,
                   }}
                 />
-
-                {bounds && !selection.boxDrawingMode && (
-                  <div
-                    style={{
-                      userSelect: "none",
-                      pointerEvents: "none",
-                      position: "absolute",
-                      zIndex: 25,
-                      height: CH * bounds.height,
-                      width: CW * bounds.width + 2,
-                      background: "var(--selection)",
-                      top: bounds.top * CH + pad,
-                      left: bounds.left * CW + pad,
-                    }}
-                  />
-                )}
-              </Fragment>
-            );
-          })}
+              )}
+            </Fragment>
+          );
+        })}
 
         {transitioning ? (
           transitioning.frames[transitioning.i]

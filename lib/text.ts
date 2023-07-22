@@ -3,6 +3,13 @@ export type Caret = {
   c: number;
 };
 
+export type Bounds = {
+  rmin?: number;
+  rmax?: number;
+  cmin?: number;
+  cmax?: number;
+};
+
 export type Selection = {
   anchor?: Caret;
   caret: Caret;
@@ -10,10 +17,43 @@ export type Selection = {
   boxDrawingMode?: boolean;
 };
 
-export function constrainCaret({ c, r }: Caret) {
+export function editWithinBounds(
+  { rmin, rmax, cmin, cmax }: Bounds,
+  edit: (lines: string[]) => string[],
+  orig: string[]
+) {
+  let edited = edit(orig);
+
+  if (typeof rmin === "number") {
+    edited = [...orig.slice(0, rmin), ...edited.slice(rmin)];
+  }
+
+  if (typeof rmax === "number") {
+    edited = [...edited.slice(0, rmax + 1), ...orig.slice(rmax + 1)];
+  }
+
+  if (typeof cmin === "number") {
+    edited = edited.map((editedLine, r) => {
+      return orig[r].slice(0, cmin).padEnd(cmin, " ") + editedLine.slice(cmin);
+    });
+  }
+
+  if (typeof cmax === "number") {
+    edited = edited.map((editedLine, r) => {
+      return editedLine.slice(0, cmax).padEnd(cmax, " ") + orig[r].slice(cmax);
+    });
+  }
+
+  return edited;
+}
+
+export function constrainCaret(
+  { c, r }: Caret,
+  bounds: Bounds = { rmin: 0, cmin: 0 }
+) {
   return {
-    c: Math.max(0, c),
-    r: Math.max(0, r),
+    c: Math.min(bounds.cmax ?? Infinity, Math.max(bounds.cmin ?? -Infinity, c)),
+    r: Math.min(bounds.rmax ?? Infinity, Math.max(bounds.rmin ?? -Infinity, r)),
   };
 }
 
@@ -39,9 +79,12 @@ export function removeDuplicateSelections(
   });
 }
 
-export function normalizeSelection(selection: Selection): Selection {
-  const caret = constrainCaret(selection.caret);
-  let anchor = selection.anchor && constrainCaret(selection.anchor);
+export function normalizeSelection(
+  selection: Selection,
+  bounds?: Bounds
+): Selection {
+  const caret = constrainCaret(selection.caret, bounds);
+  let anchor = selection.anchor && constrainCaret(selection.anchor, bounds);
   if (anchor && anchor.c === caret.c && anchor.r === caret.r) {
     anchor = undefined;
   }

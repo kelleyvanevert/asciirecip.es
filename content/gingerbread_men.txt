@@ -2,9 +2,6 @@
 title: "Gingerbread men"
 ---
 
-« Home
-
-
   GINGERBREAD MEN
   ===============
 

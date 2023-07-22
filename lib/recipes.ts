@@ -1,13 +1,14 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import matter from "gray-matter";
+import { Bounds } from "./text";
 
 const contentDir = path.join(process.cwd(), "content");
 
 export type Page = {
   slug: string;
   title: string;
-  links: Record<string, string>;
+  links: Record<string, string | (() => void)>;
   lines: string[];
 };
 
@@ -38,7 +39,15 @@ export async function getRecipe(slug: string): Promise<Page> {
     links: {
       ...links,
       ["« Home"]: "/",
+      ["ASCII recipes"]: "/",
+      ["⌂"]: "/",
+      [title]: slug.startsWith("_") ? "/" : "/" + slug,
     },
-    lines: content.replace(/^\n*/, "").split("\n"),
+    lines: [
+      slug.startsWith("_") ? "ASCII recipes" : `ASCII recipes / ${title}`,
+      "",
+      "",
+      ...content.replace(/^\n*/, "").split("\n"),
+    ],
   };
 }

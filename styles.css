@@ -59,19 +59,15 @@ body.dark {
   padding: 2px;
 }
 
-.link.outgoing {
-  font-weight: normal;
-  text-decoration: underline;
-}
-
 .link:hover {
-  background: var(--off-background);
-  outline-offset: -2px;
-  outline: 2px solid var(--off-background-2);
+  text-decoration: underline;
+  /* background: var(--off-background); */
+  /* outline-offset: -4px;
+  outline: 2px solid var(--off-background-2); */
 }
 
 .link:focus,
 .link:active {
-  outline-offset: -2px;
-  outline: 2px solid var(--text);
+  /* outline-offset: -4px;
+  outline: 2px solid var(--text); */
 }

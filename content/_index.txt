@@ -12,10 +12,6 @@ links:
   "Tim Holman's morphing effect": "https://tholman.com/post/ascii-morph/"
 ---
 
-ASCII recipes
-
-
-
   SWEET THINGS
 
   * Gingerbread men

@@ -2,9 +2,6 @@
 title: "404"
 ---
 
-« Home
-
-
   ╭────────────────────────────╮  
   │                            │  
   │  Sorry, this recipe was    │  

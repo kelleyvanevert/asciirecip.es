@@ -2,9 +2,6 @@
 title: "Pizza dough"
 ---
 
-« Home
-
-
   Pizza dough    * 1 big round pizza ±40 cm
   ===========    * bake at 230 C for 15-20 min
 
