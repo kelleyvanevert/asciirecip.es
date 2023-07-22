@@ -42,3 +42,11 @@ export async function getRecipe(slug: string): Promise<Page> {
     lines: content.replace(/^\n*/, "").split("\n"),
   };
 }
+
+const getRepo = `
+  query {
+    repository(name: "asciirecip.es", owner: "kelleyvanevert") {
+      id
+    }
+  }
+`;
