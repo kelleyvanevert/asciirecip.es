@@ -130,6 +130,53 @@ function addNewPageModal({
   };
 }
 
+function addLinkModal({
+  currentPage,
+  onClose,
+}: {
+  currentPage: Page;
+  onClose: () => void;
+}): Modal {
+  const lines = padAround(
+    `
+╭──────────────────────────────────────────────────╮
+│ ░░░░░░░░░░░░░░░░░░░ Add link ░░░░░░░░░░░░░░░░░░░ │
+├──────────────────────────────────────────────────┤
+│                                                  │
+│ Where should this phrase link to?                │
+│ ┌──────────────────────────────────────────────┐ │
+│ │                                              │ │
+│ └──────────────────────────────────────────────┘ │
+│                                                  │
+│                [ADD]       [CANCEL]              │
+╰──────────────────────────────────────────────────╯`
+      .trim()
+      .split("\n")
+  );
+
+  return {
+    lines: pasteAt(blur(currentPage.lines), { c: 13, r: 8 }, lines),
+    links: {
+      ["[ADD]"]: onClose,
+      ["[CANCEL]"]: onClose,
+    },
+    allowEditing: {
+      cmin: 13 + 5,
+      rmin: 8 + 6,
+      cmax: 13 + 37 + 12,
+      rmax: 8 + 6,
+    },
+    startWithSelections: [
+      {
+        caret: {
+          r: 8 + 6,
+          c: 13 + 5,
+        },
+      },
+    ],
+  };
+}
+
 export function MorphingLayout(props: Props) {
   useDarkMode();
 
@@ -574,7 +621,7 @@ export function MorphingLayout(props: Props) {
               const { top, left, height, width } = getSelectionBounds(
                 selections[0]
               );
-              if (height === 1) {
+              if (height === 1 && width > 0) {
                 const newPageTitle = lines[top]
                   .slice(left, left + width)
                   .trim();
@@ -592,6 +639,24 @@ export function MorphingLayout(props: Props) {
                 }
               }
             }
+          }
+          break;
+        }
+        case "l": {
+          if (e.metaKey && e.shiftKey) {
+            if (selections.length === 1) {
+              const { height, width } = getSelectionBounds(selections[0]);
+              if (height === 1 && width > 0) {
+                openModal(
+                  addLinkModal({
+                    currentPage: page,
+                    onClose: closeModal,
+                  })
+                );
+              }
+            }
+            e.preventDefault();
+            e.stopPropagation();
           }
           break;
         }

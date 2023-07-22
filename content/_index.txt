@@ -2,7 +2,7 @@
 title: "ASCII recipes"
 links:
   "ASCII recipes": "/"
-  "Kelley's": "https://klve.nl"
+  "Kelley": "https://klve.nl"
   "Gingerbread men": "/gingerbread_men"
   "Russian teacakes": "/russian_teacakes"
   "Tiramisu": "/tiramisu"
@@ -10,36 +10,37 @@ links:
   "Spinach enchiladas": "/spinach_enchiladas"
   "Pizza dough": "/pizza_dough"
   "Tim Holman's morphing effect": "https://tholman.com/post/ascii-morph/"
+  "WIP": "https://github.com/kelleyvanevert/asciirecip.es"
 ---
 
-  SWEET THINGS
-
-  * Gingerbread men
-  * Russian teacakes
-  * Tiramisu
-  * Poppy seed cake
-
-
-
-  SAVORY THINGS
-  * Spinach enchiladas
-  * Sophie's sweet potato tomato dish [TODO]
-  * Pizza dough
-
-
-
-
-
-────
-
-- A little hobby project of Kelley's
-
-- Feel free to make edits!
-  * copy/paste stuff (only ASCII allowed!)
-  * use <Cmd> to draw boxes
-  * use <Opt> for multi-selection
-  * saving and undo/redo will be added soon
-
-- The use of transitioning effects was inspired by
-   Tim Holman's morphing effect (the one that
-   shrinks/expands the recipes)
+SWEET THINGS                                                                                              
+▔▔▔▔▔▔▔▔▔▔▔▔                                                                                              
+* Gingerbread men                SAVORY THINGS                                                            
+* Russian teacakes               ▔▔▔▔▔▔▔▔▔▔▔▔▔                                                            
+* Tiramisu                       * Spinach enchiladas                                                     
+* Poppy seed cake                * Sophie's sweet potato tomato dish [TODO]                               
+                                 * Pizza dough                                                            
+                                                                                                          
+                                                                                                          
+                                                                                                          
+        CHEN's QUICK & DELICIOUS DISHES                                                                   
+        ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔                                                                   
+        [coming soon]                                                                                     
+                                                                                                          
+                                                                                                          
+                                                                                                          
+                                                                                                          
+                                                                                                          
+────                                                                                                      
+                                                         ╭────────────────────────────────────────────╮   
+- A little hobby project of Kelley's                     │                                            │   
+   (and always a bit of a WIP)                           │   Oh and, you can make edits! :)           │   
+                                                         │                                            │   
+- The use of transitioning effects was inspired by       │   ⌘ + ←/↑/→/↓   draw boxes                 │   
+   Tim Holman's morphing effect (the one that            │   ⌘ + S         save edits                 │   
+   shrinks/expands the recipes)                          │   ⌘ + A         add new page (selection)   │   
+                                                         │   ⌘ + ⇧ + L     link (selection)           │   
+                                                         │   ⌥ + click     add selection              │   
+                                                         │                                            │   
+                                                         ╰────────────────────────────────────────────╯   
+                                                                                                          
