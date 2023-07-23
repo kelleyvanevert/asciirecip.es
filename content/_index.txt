@@ -30,6 +30,7 @@ MOM's BAKING
    shrinks/expands the recipes)                          │   ⌘ + A         add new page (selection)   │
                                                          │   ⌘ + ⇧ + L     link (selection)           │
                                                          │   ⌥ + click     add selection              │
+                                                         │   ⌘ + U         select unicode chars       │
                                                          │                                            │
                                                          │   The website acts like a wiki:            │
                                                          │    page titles get automatically linked,   │

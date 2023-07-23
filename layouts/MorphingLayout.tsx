@@ -19,6 +19,7 @@ import {
   expandSelection,
   Bounds,
   editWithinBounds,
+  inBounds,
 } from "../lib/text";
 import { useKeyPressed } from "../lib/useKeyPressed";
 import { useDarkMode } from "../lib/useDarkMode";
@@ -38,8 +39,10 @@ type Props = {
 
 type Modal = Pick<Page, "lines"> & {
   allowEditing?: Bounds;
+  allowSelection?: Bounds;
+  escapeBounds?: Bounds;
   startWithSelections?: Selection[];
-  links: Record<string, () => void>;
+  links: Record<string, LinkTo>;
 };
 
 function createSaveModal({
@@ -50,7 +53,7 @@ function createSaveModal({
   onClose: () => void;
 }): Modal {
   const lines = padAround(
-    `
+    String.raw`
 ╭──────────────────────────────────────╮
 │ ░░░░░░░░░░ Save changes? ░░░░░░░░░░░ │
 ├──────────────────────────────────────┤
@@ -66,13 +69,24 @@ function createSaveModal({
       .split("\n")
   );
 
+  const height = lines.length;
+  const width = lines[0].length;
+
   return {
     lines: pasteAt(blur(currentPage.lines), { c: 13, r: 8 }, lines),
+    escapeBounds: {
+      cmin: 13 + 1,
+      rmin: 8,
+      cmax: 13 + width - 1,
+      rmax: 8 + height - 1,
+    },
     links: {
       "[CANCEL]": onClose,
-      "[SAVE]"() {
-        // closeModal();
-        console.log("TODO save");
+      "[SAVE]": {
+        action() {
+          // closeModal();
+          console.log("TODO save");
+        },
       },
     },
   };
@@ -89,7 +103,7 @@ function addNewPageModal({
 }): Modal {
   const lines = pasteAt(
     padAround(
-      `
+      String.raw`
 ╭──────────────────────────────────────╮
 │ ░░░░░░░░░░░ Add new page ░░░░░░░░░░░ │
 ├──────────────────────────────────────┤
@@ -108,11 +122,20 @@ function addNewPageModal({
     [newPageTitle]
   );
 
+  const height = lines.length;
+  const width = lines[0].length;
+
   return {
     lines: pasteAt(blur(currentPage.lines), { c: 13, r: 8 }, lines),
     links: {
       ["[ADD]"]: onClose,
       ["[CANCEL]"]: onClose,
+    },
+    escapeBounds: {
+      cmin: 13 + 1,
+      rmin: 8,
+      cmax: 13 + width - 1,
+      rmax: 8 + height - 1,
     },
     allowEditing: {
       cmin: 13 + 5,
@@ -139,7 +162,7 @@ function addLinkModal({
   onClose: () => void;
 }): Modal {
   const lines = padAround(
-    `
+    String.raw`
 ╭──────────────────────────────────────────────────╮
 │ ░░░░░░░░░░░░░░░░░░░ Add link ░░░░░░░░░░░░░░░░░░░ │
 ├──────────────────────────────────────────────────┤
@@ -155,11 +178,20 @@ function addLinkModal({
       .split("\n")
   );
 
+  const height = lines.length;
+  const width = lines[0].length;
+
   return {
     lines: pasteAt(blur(currentPage.lines), { c: 13, r: 8 }, lines),
     links: {
       ["[ADD]"]: onClose,
       ["[CANCEL]"]: onClose,
+    },
+    escapeBounds: {
+      cmin: 13 + 1,
+      rmin: 8,
+      cmax: 13 + width - 1,
+      rmax: 8 + height - 1,
     },
     allowEditing: {
       cmin: 13 + 5,
@@ -175,6 +207,80 @@ function addLinkModal({
         },
       },
     ],
+  };
+}
+
+function unicodeCharsModal({
+  currentPage,
+  onClose,
+}: {
+  currentPage: Page;
+  onClose: () => void;
+}): Modal {
+  const box = String.raw`
+╭──────────────────────────────────────────────────────╮
+│ ░░░░░░░░░░░░░░░░ Unicode characters ░░░░░░░░░░░░░░░░ │
+├──────────────────────────────────────────────────────┤
+│           Select a character to copy it              │
+│             (or just copy/paste)                     │
+│                                                      │
+│ [⌘] [⌥] [⇧]                     [□] [▣] [▥] [▧] [■]  │
+│ [←] [↑] [→] [↓]   [▢] [◎] [•]       [▤] [▦] [▨]      │
+│                                                      │
+│                   [±] [°] [═]               [◲] [◱]  │
+│ [░] [▒] [▓] [█]                 [╱] [╲]     [◳] [◰]  │
+│                                                      │
+│ [━] [╌] [╍] [▔]   [◐] [◓] [◑] [◒]           [◜] [◝]  │
+│ [╸] [┄] [┅] [▁]   [○] [◔] [◑] [◕] [●]       [◟] [◞]  │
+│ [╺] [┈] [┉]       [◍] [◌]                            │
+│                                                [◠]   │
+│       [╏] [┇] [┋]       [▭]    [◇] [◆]         [◡]   │
+│                                [◊] [▯]               │
+│       [╎] [┆] [┊]                                    │
+│                                                      │
+│    Also, asciirecip.es uses Fira Code, which will    │
+│       automatically add various fun ligatures:       │
+│                                                      │
+│       >= => .. == === !=  ==>==/==  :=  ->           │
+│    \/ /\  |--|------|-|  <>    <|> |>  <| ||>        │
+│                                                      │
+│  And it also has progress bars XD     [] [] []    │
+│  E.g.  60%                   [] [] []    │
+│  so extra !               [] [] [] [] [] []    │
+╰──────────────────────────────────────────────────────╯`;
+
+  const links = Object.fromEntries(
+    [...box.matchAll(/\[.\]/g)].map((m) => {
+      return [
+        m[0],
+        {
+          subdued: true,
+          action() {
+            navigator.clipboard.writeText(m[0][1]);
+            onClose();
+          },
+        },
+      ];
+    })
+  );
+
+  const lines = padAround(box.trim().split("\n"));
+
+  return {
+    lines: pasteAt(blur(currentPage.lines), { c: 13, r: 4 }, lines),
+    links,
+    escapeBounds: {
+      cmin: 13 + 1,
+      rmin: 4,
+      cmax: 13 + 37 + 20,
+      rmax: 4 + 29,
+    },
+    allowSelection: {
+      cmin: 13 + 3,
+      rmin: 4 + 3,
+      cmax: 13 + 37 + 18,
+      rmax: 4 + 28,
+    },
   };
 }
 
@@ -203,6 +309,8 @@ export function MorphingLayout(props: Props) {
   const { page, modal } = state;
   const selections = modal ? state.modalSelections : state.selections;
   const editBounds = modal?.allowEditing ?? { rmin: 3, cmin: 0 };
+  const selectionBounds = modal?.allowSelection ??
+    editBounds ?? { rmin: 3, cmin: 0 };
   const links = { ...props.links, ...modal?.links };
 
   const [transitioning, setTransitioning] = useState<{
@@ -227,7 +335,10 @@ export function MorphingLayout(props: Props) {
     ) => {
       setState((state) => {
         if (state.modal) {
-          if (!state.modal.allowEditing) {
+          const allowSelection =
+            state.modal.allowSelection ?? state.modal.allowEditing;
+
+          if (!allowSelection) {
             return state;
           } else if (typeof action === "function") {
             return {
@@ -236,7 +347,7 @@ export function MorphingLayout(props: Props) {
                 state.modalSelections
                   ?.flatMap(action)
                   .filter((s): s is Selection => !!s)
-                  .map((s) => normalizeSelection(s, state.modal!.allowEditing))
+                  .map((s) => normalizeSelection(s, allowSelection))
               ),
             };
           } else {
@@ -413,13 +524,12 @@ export function MorphingLayout(props: Props) {
 
   const getCaretPos = (e: { clientX: number; clientY: number }): Caret => {
     const rect = ref.current!.getBoundingClientRect();
-    return constrainCaret(
-      {
-        r: Math.floor((e.clientY - rect.y - pad) / CH),
-        c: Math.round((e.clientX - rect.x - pad) / CW),
-      },
-      editBounds
-    );
+    const caret = {
+      r: Math.floor((e.clientY - rect.y - pad) / CH),
+      c: Math.round((e.clientX - rect.x - pad) / CW),
+    };
+
+    return caret;
   };
 
   const moveCaret = useCallback(
@@ -661,6 +771,19 @@ export function MorphingLayout(props: Props) {
           }
           break;
         }
+        case "u": {
+          if (e.metaKey) {
+            openModal(
+              unicodeCharsModal({
+                currentPage: page,
+                onClose: closeModal,
+              })
+            );
+            e.preventDefault();
+            e.stopPropagation();
+          }
+          break;
+        }
         case "Escape": {
           closeModal();
           e.preventDefault();
@@ -699,7 +822,7 @@ export function MorphingLayout(props: Props) {
       e.preventDefault();
       e.stopPropagation();
     });
-  }, [makeEdit, setSelections, editBounds]);
+  }, [makeEdit, setSelections]);
 
   useEffect(() => {
     const copyText = (e: ClipboardEvent) => {
@@ -811,7 +934,19 @@ export function MorphingLayout(props: Props) {
           cursor: "text",
         }}
         onMouseDown={(e) => {
-          const caret = getCaretPos(e);
+          let caret = getCaretPos(e);
+          if (
+            modal &&
+            modal.escapeBounds &&
+            !inBounds(caret, modal.escapeBounds)
+          ) {
+            closeModal();
+            e.stopPropagation();
+            return;
+          }
+
+          caret = constrainCaret(caret, selectionBounds);
+
           if (e.altKey && !modal) {
             addSelection({ caret, selecting: true });
           } else {
@@ -820,7 +955,7 @@ export function MorphingLayout(props: Props) {
           e.stopPropagation();
         }}
         onMouseMove={(e) => {
-          const caret = getCaretPos(e);
+          const caret = constrainCaret(getCaretPos(e), selectionBounds);
           setSelections((selection) => {
             if (!selection.selecting) {
               return selection;
@@ -835,7 +970,7 @@ export function MorphingLayout(props: Props) {
           e.stopPropagation();
         }}
         onMouseUp={(e) => {
-          const caret = getCaretPos(e);
+          const caret = constrainCaret(getCaretPos(e), selectionBounds);
           setSelections((selection) => {
             if (!selection.selecting) {
               return selection;
@@ -901,7 +1036,9 @@ export function MorphingLayout(props: Props) {
                     if (token.type === "text") {
                       return <span key={i}>{token.text}</span>;
                     } else {
-                      return <LinkEl key={i} to={token.to} text={token.text} />;
+                      return (
+                        <LinkEl key={i} link={token.to} text={token.text} />
+                      );
                     }
                   })}
                 </div>
@@ -914,13 +1051,31 @@ export function MorphingLayout(props: Props) {
   );
 }
 
-function LinkEl({ to, text }: { text: string; to: string | (() => void) }) {
+function linkConfig(link: LinkTo): {
+  to?: string;
+  action?: () => void;
+  subdued?: boolean;
+} {
+  if (typeof link === "string") {
+    return { to: link };
+  } else if (typeof link === "function") {
+    return { action: link };
+  } else {
+    return link;
+  }
+}
+
+function LinkEl({ link, text }: { text: string; link: LinkTo }) {
   const isClicking = useRef(false);
+
+  const { to, action, subdued } = linkConfig(link);
 
   return (
     <Link
-      className="link"
-      href={typeof to === "string" ? to : ""}
+      className={[subdued && "subdued", action && "action", to && "link"]
+        .filter(Boolean)
+        .join(" ")}
+      href={to ?? ""}
       onMouseDown={(e) => {
         isClicking.current = true;
         e.stopPropagation();
@@ -933,10 +1088,10 @@ function LinkEl({ to, text }: { text: string; to: string | (() => void) }) {
         isClicking.current = false;
       }}
       onClick={(e) => {
-        if (typeof to === "function") {
+        if (action) {
           e.preventDefault();
           e.stopPropagation();
-          to();
+          action();
         }
       }}
     >
@@ -945,14 +1100,23 @@ function LinkEl({ to, text }: { text: string; to: string | (() => void) }) {
   );
 }
 
+type LinkTo =
+  | string
+  | (() => void)
+  | {
+      action: () => void;
+      subdued?: boolean;
+    }
+  | {
+      to: string;
+      subdued?: boolean;
+    };
+
 type Token =
   | { type: "text"; text: string }
-  | { type: "link"; text: string; to: string | (() => void) };
+  | { type: "link"; text: string; to: LinkTo };
 
-function tokenizeLine(
-  line: string,
-  links: Record<string, string | (() => void)>
-): Token[] {
+function tokenizeLine(line: string, links: Record<string, LinkTo>): Token[] {
   if (line.length === 0) {
     return [];
   }

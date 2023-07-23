@@ -47,6 +47,15 @@ export function editWithinBounds(
   return edited;
 }
 
+export function inBounds({ c, r }: Caret, bounds: Bounds = {}) {
+  return (
+    c >= (bounds.cmin ?? -Infinity) &&
+    c <= (bounds.cmax ?? Infinity) &&
+    r >= (bounds.rmin ?? -Infinity) &&
+    r <= (bounds.rmax ?? Infinity)
+  );
+}
+
 export function constrainCaret(
   { c, r }: Caret,
   bounds: Bounds = { rmin: 0, cmin: 0 }
