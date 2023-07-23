@@ -16,4 +16,6 @@ High prio to lower prio
 - box drawing
   - boxes should only auto-connect with previous pos, not all surrounding neighbors
   - add other styles?
+- move selected region
+- select region by shift + click
 - **REFACTOR** -- functionality is getting too cramped in React-style atm...

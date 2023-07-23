@@ -2,49 +2,41 @@
 title: "Spinach enchiladas"
 ---
 
-  SPINACH ENCHILADAS
-  ==================
-
-  * Red enchilada sauce
-
-    First make the red enchilada sauce, because
-     it's waay to stressful to try to make both
-     the sauce and the enchiladas at the same time :D
-
-    1. Mix in a small bowl:
-       - 3 TB flour
-       - 1 1/2 - 2 tsp chili powder
-       - 1 tsp cumin
-       - 1/2 tsp tsp garlic powder
-       - 1/4 tsp oregano
-       - 1/4 tsp salt
-       - 1/8 tsp cinnamon
-    
-    2. Heat 3 TB oil until shimmering,
-        add spices and whisk until fragrant and the
-        color has deepened, +- 1 min.
-    
-    3. Whisk in slowly, then simmer and whisk
-        frequently for +- 5 min:
-
-       - 2 TB tomato paste
-       - 2 C veggie broth
-    
-    4. Remove from heat, add 1 tsp of vinegar,
-        and black pepper to taste.
-
-
-  * Enchiladas
-
-    1. Oil, onion, garlic, some salt.
-    2. Cook down +- 500g of spinach in bunches
-        (this will take quite some time)
-    3. Remove from heat and add feta cheese,
-        black olives, black beans, or whatever
-        you want. And, 1/2+ C op sour cream.
-    4. Roll 'm up into a baking dish lined w/
-        sauce, cover with more sauce, then
-        cover with grated cheese.
-    5. Bake for 20 min @ 190ºC
-    6. Out of the oven, sprinkle with some
-        chopped cilantro
+  RED ENCHILADA SAUCE                                                 ENCHILADAS                                              
+  ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔                                                 ▔▔▔▔▔▔▔▔▔▔                                              
+  (Make this first -- it's waay to stressful to try                                                                           
+   to make it + the enchiladas as the same time XD)                             ╭───────────╮                                 
+                                                                                │           │                                 
+                                                                  Start with    │     ╭─────┴─────────╮                       
+  ╭────────────────────────────╮                                ╭────────────╮  │     │ ±500g spinach │                       
+  │ 3 TB flour                 │                                │ Oil        │  │     ╰───────────────╯                       
+  │ 1 1/2 - 2 tsp chili powder │                                │ Onion      │  │           │                                 
+  │ 1 tsp cumin                │                                │ Garlic     │  │       cook down       ╭──────╮              
++ │ 1/2 tsp tsp garlic powder  │                                │ Some salt  │  │       in bunches      │      ╵              
+  │ 1/4 tsp oregano            │      ╭──────────╮              ╰────────┬───╯  │           ╷           │     +add            
+  │ 1/4 tsp salt               │      │ 3 TB oil │                       │      │           ╵           │   ╭──────────────╮  
+  │ 1/8 tsp cinnamon           │      ╰────┬─────╯                       ╰──────╯        remove         │   │ Feta         │  
+  ╰────────────────────────────╯           ╵                                            from heat ──────╯   │ Black olives │  
+         mix in a                    heat until simmering                                                   │ Beans        │  
+         small bowl                        ╷                                                                │ ..whatever   │  
+             ╷                             │                                                                │              │  
+             ╰─────────────────────────────┤                                                                ╰───┬──────────╯  
+                                           ╵                                                                    │             
+                                  until fragrant and darkened                                    ╭──────────────╯             
+                                          (±1 min)                                               ╵                            
+           ╭───────────────────╮           ╷                                                    +add                          
+         + │ 2 TB tomato paste │           │                                                 ╭──────────────────╮             
+           │ 2 C veggie broth  ├───────────┤                                                 │ ±1/2 C sour cream│             
+           ╰───────────────────╯           ╵                                                 ╰──┬───────────────╯             
+                                   whisk in slowly, then                                        │                             
+                                simmer and whisk for ±5 min                                     ╵                             
+                                           ╷                              - Roll 'm into a baking dish lined w/ sauce         
+                                           ╵                              - Cover w/ more sauce & cheese                      
+                                      remove from                                            ╷                                
+                                          heat                                               ╵                                
+                   ╭───────────────╮       ╷                                      Bake for 20m @ 190°C                        
+                 + │ 1 tsp vinegar │       │                                                 ╷                                
+                   │ black pepper  ├───────┤                                                 ╵                                
+                   ╰───────────────╯       │                                  Sprinkle w/ some chopped cilantro               
+                                           ╵                                                                                  
+                                          DONE                                                                                
