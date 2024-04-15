@@ -1,9 +1,5 @@
-import fs from "node:fs/promises";
-import path from "node:path";
-import yaml from "yaml";
-import matter from "gray-matter";
-
-const contentDir = path.join(process.cwd(), "content");
+import { createClient } from "@supabase/supabase-js";
+import { Database } from "../gen/database.types";
 
 export type Page = {
   slug: string;
@@ -11,36 +7,59 @@ export type Page = {
   lines: string[];
 };
 
-export async function getRecipeSlugs() {
-  const filenames = await fs.readdir(contentDir);
+const API_URL = "https://ahqgxzpljysdhflaiglp.supabase.co";
+const API_KEY = process.env.SUPABASE_API_KEY;
+if (!API_KEY) {
+  throw new Error("Env var not set: SUPABASE_API_KEY");
+}
 
-  return filenames
-    .filter((filename) => !filename.startsWith("_"))
-    .filter((filename) => filename.endsWith(".txt"))
-    .map((filename) => filename.replace(".txt", ""));
+const supabase = createClient<Database>(API_URL, API_KEY);
+
+export async function getRecipes() {
+  const { data, error } = await supabase
+    .from("pages")
+    .select()
+    .not("slug", "ilike", "_%")
+    .order("slug");
+
+  if (error) {
+    throw error;
+  } else if (!data) {
+    throw new Error("Could not fetch pages from database");
+  }
+
+  return data;
+}
+
+export async function getLinks() {
+  const { data, error } = await supabase.from("links").select().order("id");
+
+  if (error) {
+    throw error;
+  } else if (!data) {
+    throw new Error("Could not fetch links from database");
+  }
+
+  return data;
+}
+
+export async function getRecipeSlugs() {
+  const recipes = await getRecipes();
+
+  return recipes.map((r) => r.slug);
 }
 
 export async function getAllLinks() {
-  const slugs = await getRecipeSlugs();
+  const recipes = await getRecipes();
+  const links = await getLinks();
 
   const recipeLinks = Object.fromEntries(
-    await Promise.all(
-      slugs.map(async (slug) => {
-        const filecontents = await fs.readFile(
-          path.join(contentDir, slug + ".txt"),
-          "utf8"
-        );
-        const {
-          data: { title },
-        } = matter(filecontents);
-        return [title as string, "/" + slug] as const;
-      })
-    )
+    recipes.map((r) => [r.title, "/" + r.slug] as const)
   );
 
-  const otherLinks = yaml.parse(
-    await fs.readFile(path.join(contentDir, "_config.yaml"), "utf8")
-  ).links;
+  const otherLinks = Object.fromEntries(
+    links.map((r) => [r.text, r.url] as const)
+  );
 
   return {
     ...recipeLinks,
@@ -49,26 +68,29 @@ export async function getAllLinks() {
 }
 
 export async function getRecipe(slug: string): Promise<Page> {
-  const filename = slug + ".txt";
+  const { data, error } = await supabase
+    .from("pages")
+    .select()
+    .eq("slug", slug);
 
-  const filecontents = await fs.readFile(
-    path.join(contentDir, filename),
-    "utf8"
-  );
+  if (error) {
+    throw error;
+  } else if (!data || data.length === 0) {
+    throw new Error(`Could not fetch page with slug [${slug}] from database`);
+  }
 
-  const {
-    data: { title, links = {} },
-    content,
-  } = matter(filecontents);
+  const recipe = data[0];
 
   return {
-    slug,
-    title,
+    slug: recipe.slug,
+    title: recipe.title,
     lines: [
-      slug.startsWith("_") ? "ASCII recipes" : `ASCII recipes / ${title}`,
+      slug.startsWith("_")
+        ? "ASCII recipes"
+        : `ASCII recipes / ${recipe.title}`,
       "",
       "",
-      ...content.replace(/^\n*/, "").split("\n"),
+      ...recipe.content.replace(/^\n*/, "").split("\n"),
     ],
   };
 }

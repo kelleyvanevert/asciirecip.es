@@ -9,10 +9,12 @@
     "dev": "next dev",
     "typecheck": "tsc",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "gen": "supabase gen types typescript --project-id ahqgxzpljysdhflaiglp > gen/database.types.ts"
   },
   "dependencies": {
     "@octokit/core": "^5.0.0",
+    "@supabase/supabase-js": "^2.42.4",
     "dotenv-flow": "^3.2.0",
     "gray-matter": "^4.0.3",
     "next": "^13.4.10",
@@ -25,6 +27,7 @@
     "@types/node": "20.4.2",
     "@types/react": "^18.2.15",
     "@types/react-dom": "^18.2.7",
+    "supabase": "^1.157.2",
     "typescript": "^5.1.6"
   }
 }
