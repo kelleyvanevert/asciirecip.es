@@ -2,7 +2,7 @@ import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import Head from "next/head";
 import Link from "next/link";
 import { sandstorm, dissolve, asciiMorph, forModal } from "./morph_effects";
-import { Page } from "../lib/recipes";
+import { Data, Page } from "../lib/recipes";
 import { callEach, onEvent } from "../lib/onEvent";
 import {
   Caret,
@@ -34,7 +34,8 @@ const pad = CH;
 
 type Props = {
   page: Page;
-  links: Record<string, string>;
+  data: Data;
+  refetch: () => void;
 };
 
 type Modal = Pick<Page, "lines"> & {
@@ -45,12 +46,82 @@ type Modal = Pick<Page, "lines"> & {
   links: Record<string, LinkTo>;
 };
 
-function createSaveModal({
+function getLocallySavedPageWithEditsKey(slug: string) {
+  return `pageWithEdits:${slug}`;
+}
+
+function getLocallySavedPageWithEdits(slug: string): undefined | Page {
+  const str = localStorage.getItem(getLocallySavedPageWithEditsKey(slug));
+  if (str && str.startsWith("{")) {
+    try {
+      return JSON.parse(str);
+    } catch {}
+  }
+}
+
+function saveLocalPageWithEdits(page: Page) {
+  localStorage.setItem(
+    getLocallySavedPageWithEditsKey(page.slug),
+    JSON.stringify(page)
+  );
+}
+
+function removeLocallySavedPageWithEdits(slug: string) {
+  localStorage.removeItem(getLocallySavedPageWithEditsKey(slug));
+}
+
+function createDiscardChangesModal({
   currentPage,
   onClose,
+  onDiscard,
 }: {
   currentPage: Page;
   onClose: () => void;
+  onDiscard: () => void;
+}): Modal {
+  const lines = padAround(
+    String.raw`
+╭──────────────────────────────────────╮
+│ ░░░░░░░░░ Discard changes? ░░░░░░░░░ │
+├──────────────────────────────────────┤
+│                                      │
+│       Do you want to discard         │
+│      all changes to this page?       │
+│                                      │
+│              Continue?               │
+│                                      │
+│       [DISCARD]       [CANCEL]       │
+╰──────────────────────────────────────╯`
+      .trim()
+      .split("\n")
+  );
+
+  const height = lines.length;
+  const width = lines[0].length;
+
+  return {
+    lines: pasteAt(blur(currentPage.lines), { c: 13, r: 8 }, lines),
+    escapeBounds: {
+      cmin: 13 + 1,
+      rmin: 8,
+      cmax: 13 + width - 1,
+      rmax: 8 + height - 1,
+    },
+    links: {
+      "[CANCEL]": onClose,
+      "[DISCARD]": onDiscard,
+    },
+  };
+}
+
+function createSaveModal({
+  currentPage,
+  onClose,
+  onSave,
+}: {
+  currentPage: Page;
+  onClose: () => void;
+  onSave: () => void;
 }): Modal {
   const lines = padAround(
     String.raw`
@@ -58,8 +129,7 @@ function createSaveModal({
 │ ░░░░░░░░░░ Save changes? ░░░░░░░░░░░ │
 ├──────────────────────────────────────┤
 │                                      │
-│ This will save all of your local     │
-│  changes (also of other recipes).    │
+│    Do you want to save this page?    │
 │                                      │
 │              Continue?               │
 │                                      │
@@ -82,12 +152,7 @@ function createSaveModal({
     },
     links: {
       "[CANCEL]": onClose,
-      "[SAVE]": {
-        action() {
-          // closeModal();
-          console.log("TODO save");
-        },
-      },
+      "[SAVE]": onSave,
     },
   };
 }
@@ -96,10 +161,12 @@ function addNewPageModal({
   currentPage,
   newPageTitle,
   onClose,
+  onAdd,
 }: {
   currentPage: Page;
   newPageTitle: string;
   onClose: () => void;
+  onAdd: () => void;
 }): Modal {
   const lines = pasteAt(
     padAround(
@@ -128,8 +195,8 @@ function addNewPageModal({
   return {
     lines: pasteAt(blur(currentPage.lines), { c: 13, r: 8 }, lines),
     links: {
-      ["[ADD]"]: onClose,
       ["[CANCEL]"]: onClose,
+      ["[ADD]"]: onAdd,
     },
     escapeBounds: {
       cmin: 13 + 1,
@@ -298,20 +365,30 @@ export function MorphingLayout(props: Props) {
 
   const [state, setState] = useState<{
     page: Page;
+    pageWithEdits?: Page;
     selections: Selection[];
     modal?: Modal;
     modalSelections: Selection[];
-  }>({
-    page: props.page,
-    selections: [],
-    modalSelections: [],
+  }>(() => {
+    return {
+      page: props.page,
+      pageWithEdits: getLocallySavedPageWithEdits(props.page.slug),
+      selections: [],
+      modalSelections: [],
+    };
   });
-  const { page, modal } = state;
+
+  const { page, pageWithEdits, modal } = state;
+  const pageHasLocalUnsavedEdits = !!pageWithEdits;
+
   const selections = modal ? state.modalSelections : state.selections;
   const editBounds = modal?.allowEditing ?? { rmin: 3, cmin: 0 };
   const selectionBounds = modal?.allowSelection ??
     editBounds ?? { rmin: 3, cmin: 0 };
-  const links = { ...props.links, ...modal?.links };
+  const links = {
+    ...Object.fromEntries(props.data.links.map((l) => [l.text, l.url])),
+    ...modal?.links,
+  };
 
   const [transitioning, setTransitioning] = useState<{
     i: number;
@@ -409,12 +486,28 @@ export function MorphingLayout(props: Props) {
           }
         }
 
+        const currPageWithEdits = state.pageWithEdits ?? state.page;
+
+        const lines = editWithinBounds(
+          editBounds,
+          edit,
+          currPageWithEdits.lines
+        );
+
+        if (!lines[0].includes(" (unsaved)")) {
+          lines[0] += " (unsaved)";
+        }
+
+        const newPageWithEdits: Page = {
+          ...currPageWithEdits,
+          lines,
+        };
+
+        saveLocalPageWithEdits(newPageWithEdits);
+
         return {
           ...state,
-          page: {
-            ...state.page,
-            lines: editWithinBounds(editBounds, edit, state.page.lines),
-          },
+          pageWithEdits: newPageWithEdits,
         };
       });
     },
@@ -428,9 +521,13 @@ export function MorphingLayout(props: Props) {
         const randomEffect =
           effects[Math.floor(Math.random() * effects.length)];
 
+        const pageWithEdits = getLocallySavedPageWithEdits(props.page.slug);
+
+        const nextPage = pageWithEdits ?? props.page;
+
         const { frames, duration } = randomEffect(
           prevPage.lines,
-          props.page.lines
+          nextPage.lines
         );
 
         if (!(window as any).debug?.disableTransitions) {
@@ -441,7 +538,12 @@ export function MorphingLayout(props: Props) {
           });
         }
 
-        setState({ page: props.page, selections: [], modalSelections: [] });
+        setState({
+          page: props.page,
+          pageWithEdits,
+          selections: [],
+          modalSelections: [],
+        });
       }
     },
     [props.page, setState, setTransitioning]
@@ -472,7 +574,7 @@ export function MorphingLayout(props: Props) {
 
       const { frames, duration } = forModal(
         state.modal.lines,
-        state.page.lines
+        state.pageWithEdits?.lines ?? state.page.lines
       );
 
       if (!(window as any).debug?.disableTransitions) {
@@ -517,7 +619,7 @@ export function MorphingLayout(props: Props) {
     [setState, closeModal, setTransitioning]
   );
 
-  const lines = modal?.lines ?? page.lines;
+  const lines = modal?.lines ?? pageWithEdits?.lines ?? page.lines;
   const longest = Math.max(...lines.map((line) => line.length));
   const maxCol = longest - 1;
   const maxRow = lines.length - 1;
@@ -642,6 +744,8 @@ export function MorphingLayout(props: Props) {
   }, [setSelections, makeEdit]);
 
   useEffect(() => {
+    const currentPage = pageWithEdits ?? page;
+
     return onEvent(window, "keydown", (e) => {
       switch (e.key) {
         case "ArrowUp": {
@@ -717,9 +821,62 @@ export function MorphingLayout(props: Props) {
           break;
         }
         case "s": {
-          if (e.metaKey) {
+          if (e.metaKey || e.ctrlKey) {
             openModal(
-              createSaveModal({ currentPage: page, onClose: closeModal })
+              createSaveModal({
+                currentPage,
+                onClose: closeModal,
+                async onSave() {
+                  const body = await fetch("/api/save", {
+                    method: "POST",
+                    headers: {
+                      "content-type": "application/json",
+                    },
+                    body: JSON.stringify({
+                      page: {
+                        ...currentPage,
+                        content: currentPage.lines.slice(3).join("\n"),
+                      },
+                    }),
+                  }).then((r) => r.json());
+
+                  if (body?.ok && body?.result) {
+                    removeLocallySavedPageWithEdits(page.slug);
+                    setState((state) => {
+                      return {
+                        ...state,
+                        page: body.result,
+                        pageWithEdits: undefined,
+                      };
+                    });
+                    closeModal();
+                    props.refetch();
+                  }
+                },
+              })
+            );
+            e.preventDefault();
+            e.stopPropagation();
+          }
+          break;
+        }
+        case "d": {
+          if (e.metaKey || e.ctrlKey) {
+            openModal(
+              createDiscardChangesModal({
+                currentPage,
+                onClose: closeModal,
+                onDiscard() {
+                  removeLocallySavedPageWithEdits(currentPage.slug);
+                  setState((state) => {
+                    return {
+                      ...state,
+                      pageWithEdits: undefined,
+                    };
+                  });
+                  closeModal();
+                },
+              })
             );
             e.preventDefault();
             e.stopPropagation();
@@ -727,7 +884,7 @@ export function MorphingLayout(props: Props) {
           break;
         }
         case "a": {
-          if (e.metaKey) {
+          if (e.metaKey || e.ctrlKey) {
             if (selections.length === 1) {
               const { top, left, height, width } = getSelectionBounds(
                 selections[0]
@@ -740,9 +897,47 @@ export function MorphingLayout(props: Props) {
                 if (newPageTitle.length > 0) {
                   openModal(
                     addNewPageModal({
-                      currentPage: page,
+                      currentPage,
                       newPageTitle,
                       onClose: closeModal,
+                      async onAdd() {
+                        // suuuper hacky way of getting data out of react's setState :P
+                        const newPageTitle = await new Promise<string>(
+                          (resolve) => {
+                            setState((s) => {
+                              const lines = s.modal?.lines ?? [];
+                              const row = lines[8 + 6] ?? "";
+                              const newPageTitle = row
+                                .slice(13 + 5, 13 + 37)
+                                .trim();
+
+                              setTimeout(() => resolve(newPageTitle), 0);
+
+                              return s;
+                            });
+                          }
+                        );
+
+                        if (!newPageTitle) {
+                          closeModal();
+                          return;
+                        }
+
+                        const body = await fetch("/api/new", {
+                          method: "POST",
+                          headers: {
+                            "content-type": "application/json",
+                          },
+                          body: JSON.stringify({
+                            title: newPageTitle,
+                          }),
+                        }).then((r) => r.json());
+
+                        if (body?.ok && body?.result) {
+                          closeModal();
+                          props.refetch();
+                        }
+                      },
                     })
                   );
                   e.preventDefault();
@@ -754,13 +949,13 @@ export function MorphingLayout(props: Props) {
           break;
         }
         case "l": {
-          if (e.metaKey && e.shiftKey) {
+          if ((e.metaKey || e.ctrlKey) && e.shiftKey) {
             if (selections.length === 1) {
               const { height, width } = getSelectionBounds(selections[0]);
               if (height === 1 && width > 0) {
                 openModal(
                   addLinkModal({
-                    currentPage: page,
+                    currentPage,
                     onClose: closeModal,
                   })
                 );
@@ -772,10 +967,10 @@ export function MorphingLayout(props: Props) {
           break;
         }
         case "u": {
-          if (e.metaKey) {
+          if (e.metaKey || e.ctrlKey) {
             openModal(
               unicodeCharsModal({
-                currentPage: page,
+                currentPage,
                 onClose: closeModal,
               })
             );
@@ -796,6 +991,7 @@ export function MorphingLayout(props: Props) {
     });
   }, [
     page,
+    pageWithEdits,
     modal,
     moveCaret,
     selections,
@@ -1032,7 +1228,13 @@ export function MorphingLayout(props: Props) {
             {lines.map((line, i) => {
               return (
                 <div key={i} style={{ height: CH }}>
-                  {tokenizeLine(line, links).map((token, i) => {
+                  {tokenizeLine(
+                    line,
+                    links,
+                    i,
+                    pageHasLocalUnsavedEdits,
+                    !!state.modal
+                  ).map((token, i) => {
                     if (token.type === "text") {
                       return <span key={i}>{token.text}</span>;
                     } else {
@@ -1116,11 +1318,13 @@ type Token =
   | { type: "text"; text: string }
   | { type: "link"; text: string; to: LinkTo };
 
-function tokenizeLine(line: string, links: Record<string, LinkTo>): Token[] {
-  if (line.length === 0) {
-    return [];
-  }
-
+function tokenizeLine(
+  line: string,
+  links: Record<string, LinkTo>,
+  lineNo: number,
+  pageHasLocalUnsavedEdits: boolean,
+  hasOpenModal: boolean
+): Token[] {
   const foundLink = Object.entries(links)
     .map(([text, to]) => {
       const i = line.indexOf(text);
@@ -1136,7 +1340,20 @@ function tokenizeLine(line: string, links: Record<string, LinkTo>): Token[] {
       tokens.push({ type: "text", text: line.slice(0, i) });
     }
     tokens.push({ type: "link", text, to });
-    return [...tokens, ...tokenizeLine(line.slice(i + text.length), links)];
+    return [
+      ...tokens,
+      ...tokenizeLine(
+        line.slice(i + text.length),
+        links,
+        lineNo,
+        pageHasLocalUnsavedEdits,
+        hasOpenModal
+      ),
+    ];
+  }
+
+  if (lineNo === 0 && pageHasLocalUnsavedEdits && !hasOpenModal) {
+    // line += " (unsaved)";
   }
 
   return [{ type: "text", text: line }];

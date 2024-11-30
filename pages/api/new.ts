@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { upsertPage } from "../../lib/recipes";
+import { createPage } from "../../lib/recipes";
 
 export default async function handler(
   req: NextApiRequest,
@@ -9,18 +9,14 @@ export default async function handler(
     return res.status(400).json({ error: "Must use POST to save" });
   }
 
-  if (
-    req.body?.page &&
-    typeof req.body.page === "object" &&
-    typeof req.body.page.slug === "string" &&
-    typeof req.body.page.title === "string" &&
-    typeof req.body.page.content === "string"
-  ) {
-    const page = await upsertPage(
-      req.body.page.slug,
-      req.body.page.title,
-      req.body.page.content
-    );
+  if (typeof req.body?.title === "string") {
+    const title = req.body.title as string;
+    const slug = title
+      .toLocaleLowerCase()
+      .replace(/[ -]/g, "_")
+      .replace(/[^a-zA-Z0-9_]/g, "");
+
+    const page = await createPage(slug, title);
 
     res.status(200).json({
       ok: true,

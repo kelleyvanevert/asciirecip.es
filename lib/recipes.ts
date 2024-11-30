@@ -7,7 +7,17 @@ export type Page = {
   lines: string[];
 };
 
-const API_URL = "https://ahqgxzpljysdhflaiglp.supabase.co";
+export type Link = {
+  text: string;
+  url: string;
+};
+
+export type Data = {
+  pages: Page[];
+  links: Link[];
+};
+
+const API_URL = "https://xnyjvnwxkycelywcqqbg.supabase.co";
 const API_KEY = process.env.SUPABASE_API_KEY;
 if (!API_KEY) {
   throw new Error("Env var not set: SUPABASE_API_KEY");
@@ -15,12 +25,24 @@ if (!API_KEY) {
 
 const supabase = createClient<Database>(API_URL, API_KEY);
 
-export async function getRecipes() {
+function contentToLines(slug: string, title: string, content: string) {
+  return [
+    slug.startsWith("_") ? "ASCII recipes" : `ASCII recipes / ${title}`,
+    "",
+    "",
+    ...content.replace(/^\n*/, "").split("\n"),
+  ];
+}
+
+export async function createPage(slug: string, title: string): Promise<Page> {
   const { data, error } = await supabase
     .from("pages")
-    .select()
-    .not("slug", "ilike", "_%")
-    .order("slug");
+    .insert({
+      slug,
+      title,
+      content: "",
+    })
+    .select();
 
   if (error) {
     throw error;
@@ -28,11 +50,70 @@ export async function getRecipes() {
     throw new Error("Could not fetch pages from database");
   }
 
-  return data;
+  const page = data[0];
+
+  return {
+    ...page,
+    lines: contentToLines(page.slug, page.title, page.content),
+  };
 }
 
-export async function getLinks() {
-  const { data, error } = await supabase.from("links").select().order("id");
+export async function upsertPage(
+  slug: string,
+  title: string,
+  content: string
+): Promise<Page> {
+  const { data, error } = await supabase
+    .from("pages")
+    .upsert(
+      {
+        slug,
+        title,
+        content,
+      },
+      {
+        onConflict: "slug",
+      }
+    )
+    .select();
+
+  if (error) {
+    throw error;
+  } else if (!data) {
+    throw new Error("Could not fetch pages from database");
+  }
+
+  const page = data[0];
+
+  return {
+    ...page,
+    lines: contentToLines(page.slug, page.title, page.content),
+  };
+}
+
+async function getPages() {
+  const { data, error } = await supabase.from("pages").select().order("slug");
+
+  if (error) {
+    throw error;
+  } else if (!data) {
+    throw new Error("Could not fetch pages from database");
+  }
+
+  return (
+    data
+      // .filter((r) => !r.slug.startsWith("_"))
+      .map((r) => {
+        return {
+          ...r,
+          lines: contentToLines(r.slug, r.title, r.content),
+        };
+      })
+  );
+}
+
+async function getLinks() {
+  const { data, error } = await supabase.from("links").select().order("text");
 
   if (error) {
     throw error;
@@ -43,54 +124,23 @@ export async function getLinks() {
   return data;
 }
 
-export async function getRecipeSlugs() {
-  const recipes = await getRecipes();
+export async function getData(): Promise<Data> {
+  const pages: Page[] = await getPages();
+  const otherLinks = await getLinks();
 
-  return recipes.map((r) => r.slug);
-}
+  const recipeLinks = pages
+    .filter((p) => !p.slug.startsWith("_"))
+    .map((r) => {
+      return {
+        text: r.title,
+        url: "/" + r.slug,
+      };
+    });
 
-export async function getAllLinks() {
-  const recipes = await getRecipes();
-  const links = await getLinks();
-
-  const recipeLinks = Object.fromEntries(
-    recipes.map((r) => [r.title, "/" + r.slug] as const)
-  );
-
-  const otherLinks = Object.fromEntries(
-    links.map((r) => [r.text, r.url] as const)
-  );
+  const links: Link[] = [...recipeLinks, ...otherLinks];
 
   return {
-    ...recipeLinks,
-    ...otherLinks,
-  };
-}
-
-export async function getRecipe(slug: string): Promise<Page> {
-  const { data, error } = await supabase
-    .from("pages")
-    .select()
-    .eq("slug", slug);
-
-  if (error) {
-    throw error;
-  } else if (!data || data.length === 0) {
-    throw new Error(`Could not fetch page with slug [${slug}] from database`);
-  }
-
-  const recipe = data[0];
-
-  return {
-    slug: recipe.slug,
-    title: recipe.title,
-    lines: [
-      slug.startsWith("_")
-        ? "ASCII recipes"
-        : `ASCII recipes / ${recipe.title}`,
-      "",
-      "",
-      ...recipe.content.replace(/^\n*/, "").split("\n"),
-    ],
+    pages,
+    links,
   };
 }

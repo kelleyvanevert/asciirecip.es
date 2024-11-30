@@ -11,16 +11,19 @@ export type Database = {
     Tables: {
       links: {
         Row: {
+          created_at: string
           id: string
           text: string
           url: string
         }
         Insert: {
+          created_at?: string
           id?: string
           text?: string
           url?: string
         }
         Update: {
+          created_at?: string
           id?: string
           text?: string
           url?: string
@@ -30,16 +33,22 @@ export type Database = {
       pages: {
         Row: {
           content: string
+          created_at: string
+          id: string
           slug: string
           title: string
         }
         Insert: {
           content?: string
+          created_at?: string
+          id?: string
           slug: string
           title?: string
         }
         Update: {
           content?: string
+          created_at?: string
+          id?: string
           slug?: string
           title?: string
         }
@@ -141,4 +150,19 @@ export type Enums<
   ? Database[PublicEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : PublicEnumNameOrOptions extends keyof PublicSchema["Enums"]
     ? PublicSchema["Enums"][PublicEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof PublicSchema["CompositeTypes"]
+    | { schema: keyof Database },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof PublicSchema["CompositeTypes"]
+    ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never

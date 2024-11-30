@@ -2,7 +2,6 @@
   "name": "asciirecip.es",
   "private": true,
   "version": "1.0.0",
-  "main": "index.js",
   "author": "Kelley van Evert <hello@kelleyvanevert.nl>",
   "license": "MIT",
   "scripts": {
@@ -10,24 +9,23 @@
     "typecheck": "tsc",
     "build": "next build",
     "start": "next start",
-    "gen": "supabase gen types typescript --project-id ahqgxzpljysdhflaiglp > gen/database.types.ts"
+    "gen": "supabase gen types typescript --project-id xnyjvnwxkycelywcqqbg > gen/database.types.ts"
   },
   "dependencies": {
-    "@octokit/core": "^5.0.0",
-    "@supabase/supabase-js": "^2.42.4",
-    "dotenv-flow": "^3.2.0",
+    "@supabase/supabase-js": "^2.46.2",
+    "dotenv-flow": "^4.1.0",
     "gray-matter": "^4.0.3",
-    "next": "^13.4.10",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "yaml": "^2.3.1"
+    "next": "^15.0.3",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "yaml": "^2.6.1"
   },
   "prettier": {},
   "devDependencies": {
-    "@types/node": "20.4.2",
-    "@types/react": "^18.2.15",
-    "@types/react-dom": "^18.2.7",
-    "supabase": "^1.157.2",
-    "typescript": "^5.1.6"
+    "@types/node": "22.10.1",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "supabase": "^1.223.10",
+    "typescript": "^5.7.2"
   }
 }
