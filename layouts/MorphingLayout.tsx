@@ -47,7 +47,7 @@ type Modal = Pick<Page, "lines"> & {
 };
 
 export function getLocalStorage() {
-  return window?.localStorage ?? ({} as Storage);
+  return globalThis?.localStorage ?? ({} as Storage);
 }
 
 function getLocallySavedPageWithEditsKey(slug: string) {
@@ -359,7 +359,7 @@ export function MorphingLayout(props: Props) {
   useDarkMode();
 
   useEffect(() => {
-    (window as any).debug = {
+    (globalThis as any).debug = {
       disableTransitions: false,
     };
     console.log("See window.debug");
@@ -534,7 +534,7 @@ export function MorphingLayout(props: Props) {
           nextPage.lines
         );
 
-        if (!(window as any).debug?.disableTransitions) {
+        if (!(globalThis as any).debug?.disableTransitions) {
           setTransitioning({
             i: 0,
             duration,
@@ -581,7 +581,7 @@ export function MorphingLayout(props: Props) {
         state.pageWithEdits?.lines ?? state.page.lines
       );
 
-      if (!(window as any).debug?.disableTransitions) {
+      if (!(globalThis as any).debug?.disableTransitions) {
         setTransitioning({
           i: 0,
           duration,

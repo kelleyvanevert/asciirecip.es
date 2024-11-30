@@ -35,7 +35,7 @@ export function Entry() {
     }
   }, [data, params?.recipe]);
 
-  if (!page || !data || !window) {
+  if (!page || !data || !globalThis.localStorage) {
     return (
       <main
         style={{
