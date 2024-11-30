@@ -9,7 +9,7 @@
 High prio to lower prio
 
 - save
-  - (if kelley: immediately, if someone else: make PR?)
+- checkboxes
 - history of edits
 - ⌥ + arrow (+ shift) moves/selects by word
 - double click word to select
