@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { MorphingLayout } from "./MorphingLayout";
 
 export function Entry() {
+  const [isClient, setIsClient] = useState(false);
   const [data, setData] = useState<Data>();
   const params = useParams();
 
@@ -35,7 +36,11 @@ export function Entry() {
     }
   }, [data, params?.recipe]);
 
-  if (!page || !data || !globalThis.localStorage) {
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  if (!page || !data || !globalThis.localStorage || !isClient) {
     return (
       <main
         style={{
