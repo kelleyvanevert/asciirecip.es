@@ -46,12 +46,16 @@ type Modal = Pick<Page, "lines"> & {
   links: Record<string, LinkTo>;
 };
 
+export function getLocalStorage() {
+  return window?.localStorage ?? ({} as Storage);
+}
+
 function getLocallySavedPageWithEditsKey(slug: string) {
   return `pageWithEdits:${slug}`;
 }
 
 function getLocallySavedPageWithEdits(slug: string): undefined | Page {
-  const str = localStorage.getItem(getLocallySavedPageWithEditsKey(slug));
+  const str = getLocalStorage().getItem(getLocallySavedPageWithEditsKey(slug));
   if (str && str.startsWith("{")) {
     try {
       return JSON.parse(str);
@@ -60,14 +64,14 @@ function getLocallySavedPageWithEdits(slug: string): undefined | Page {
 }
 
 function saveLocalPageWithEdits(page: Page) {
-  localStorage.setItem(
+  getLocalStorage().setItem(
     getLocallySavedPageWithEditsKey(page.slug),
     JSON.stringify(page)
   );
 }
 
 function removeLocallySavedPageWithEdits(slug: string) {
-  localStorage.removeItem(getLocallySavedPageWithEditsKey(slug));
+  getLocalStorage().removeItem(getLocallySavedPageWithEditsKey(slug));
 }
 
 function createDiscardChangesModal({
