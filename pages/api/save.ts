@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { upsertPage } from "../../lib/recipes";
+import { updatePage } from "../../lib/recipes";
 
 export default async function handler(
   req: NextApiRequest,
@@ -12,11 +12,13 @@ export default async function handler(
   if (
     req.body?.page &&
     typeof req.body.page === "object" &&
+    typeof req.body.page.id === "string" &&
     typeof req.body.page.slug === "string" &&
     typeof req.body.page.title === "string" &&
     typeof req.body.page.content === "string"
   ) {
-    const page = await upsertPage(
+    const page = await updatePage(
+      req.body.page.id,
       req.body.page.slug,
       req.body.page.title,
       req.body.page.content

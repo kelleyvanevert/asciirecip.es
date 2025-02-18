@@ -1,7 +1,25 @@
-import { createClient } from "@supabase/supabase-js";
-import { Database } from "../gen/database.types";
+import { createDirectus, graphql } from "@directus/sdk";
+
+type ModelAsciiPage = {
+  id: string;
+  slug: string;
+  title: string;
+  content: string;
+};
+
+type ModelAsciiLink = {
+  id: string;
+  text: string;
+  url: string;
+};
+
+type Schema = {
+  ascii_links: ModelAsciiLink[];
+  ascii_pages: ModelAsciiPage[];
+};
 
 export type Page = {
+  id: string;
   slug: string;
   title: string;
   lines: string[];
@@ -17,13 +35,9 @@ export type Data = {
   links: Link[];
 };
 
-const API_URL = "https://xnyjvnwxkycelywcqqbg.supabase.co";
-const API_KEY = process.env.SUPABASE_API_KEY;
-if (!API_KEY) {
-  throw new Error("Env var not set: SUPABASE_API_KEY");
-}
-
-const supabase = createClient<Database>(API_URL, API_KEY);
+const client = createDirectus<Schema>("https://data.klve.nl/graphql").with(
+  graphql()
+);
 
 function contentToLines(slug: string, title: string, content: string) {
   return [
@@ -35,22 +49,27 @@ function contentToLines(slug: string, title: string, content: string) {
 }
 
 export async function createPage(slug: string, title: string): Promise<Page> {
-  const { data, error } = await supabase
-    .from("pages")
-    .insert({
-      slug,
-      title,
-      content: "",
-    })
-    .select();
+  const result = await client.query<{ page: ModelAsciiPage }>(
+    `
+      mutation ($data: create_ascii_pages_input!) {
+        page: create_ascii_pages_item(data: $data) {
+          id
+          slug
+          title
+          content
+        }
+      }
+    `,
+    {
+      data: {
+        slug,
+        title,
+        content: "",
+      },
+    }
+  );
 
-  if (error) {
-    throw error;
-  } else if (!data) {
-    throw new Error("Could not fetch pages from database");
-  }
-
-  const page = data[0];
+  const page = result.page;
 
   return {
     ...page,
@@ -58,32 +77,34 @@ export async function createPage(slug: string, title: string): Promise<Page> {
   };
 }
 
-export async function upsertPage(
+export async function updatePage(
+  id: string,
   slug: string,
   title: string,
   content: string
 ): Promise<Page> {
-  const { data, error } = await supabase
-    .from("pages")
-    .upsert(
-      {
+  const result = await client.query<{ page: ModelAsciiPage }>(
+    `
+      mutation ($id: ID!, $data: update_ascii_pages_input!) {
+        page: update_ascii_pages_item(id: $id, data: $data) {
+          id
+          slug
+          title
+          content
+        }
+      }
+    `,
+    {
+      id,
+      data: {
         slug,
         title,
         content,
       },
-      {
-        onConflict: "slug",
-      }
-    )
-    .select();
+    }
+  );
 
-  if (error) {
-    throw error;
-  } else if (!data) {
-    throw new Error("Could not fetch pages from database");
-  }
-
-  const page = data[0];
+  const page = result.page;
 
   return {
     ...page,
@@ -92,16 +113,19 @@ export async function upsertPage(
 }
 
 async function getPages() {
-  const { data, error } = await supabase.from("pages").select().order("slug");
-
-  if (error) {
-    throw error;
-  } else if (!data) {
-    throw new Error("Could not fetch pages from database");
-  }
+  const result = await client.query<{ ascii_pages: ModelAsciiPage[] }>(`
+    query {
+      ascii_pages {
+        id
+        slug
+        title
+        content
+      }
+    }
+  `);
 
   return (
-    data
+    result.ascii_pages
       // .filter((r) => !r.slug.startsWith("_"))
       .map((r) => {
         return {
@@ -113,15 +137,17 @@ async function getPages() {
 }
 
 async function getLinks() {
-  const { data, error } = await supabase.from("links").select().order("text");
+  const result = await client.query<{ ascii_links: ModelAsciiLink[] }>(`
+    query {
+      ascii_links {
+        id
+        text
+        url
+      }
+    }
+  `);
 
-  if (error) {
-    throw error;
-  } else if (!data) {
-    throw new Error("Could not fetch links from database");
-  }
-
-  return data;
+  return result.ascii_links;
 }
 
 export async function getData(): Promise<Data> {
