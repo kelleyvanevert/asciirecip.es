@@ -9,14 +9,18 @@ export default async function handler(
     return res.status(400).json({ error: "Must use POST to save" });
   }
 
-  if (typeof req.body?.title === "string") {
+  if (
+    typeof req.body?.password === "string" &&
+    typeof req.body?.title === "string"
+  ) {
+    const password = req.body.password as string;
     const title = req.body.title as string;
     const slug = title
       .toLocaleLowerCase()
       .replace(/[ -]/g, "_")
       .replace(/[^a-zA-Z0-9_]/g, "");
 
-    const page = await createPage(slug, title);
+    const page = await createPage(password, slug, title);
 
     res.status(200).json({
       ok: true,

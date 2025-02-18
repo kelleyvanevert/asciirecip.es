@@ -10,6 +10,7 @@ export default async function handler(
   }
 
   if (
+    typeof req.body?.password === "string" &&
     req.body?.page &&
     typeof req.body.page === "object" &&
     typeof req.body.page.id === "string" &&
@@ -18,6 +19,7 @@ export default async function handler(
     typeof req.body.page.content === "string"
   ) {
     const page = await updatePage(
+      req.body.password,
       req.body.page.id,
       req.body.page.slug,
       req.body.page.title,

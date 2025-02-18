@@ -808,13 +808,13 @@ export function MorphingLayout(props: Props) {
   }, [setSelections, makeEdit]);
 
   const authenticate = useCallback(async () => {
-    let token = sessionStorage.getItem("token") ?? "";
+    let password = getLocalStorage().getItem("password") ?? "";
 
-    if (token) {
-      return token;
+    if (password) {
+      return password;
     }
 
-    const password = window.prompt("Secret admin password?");
+    password = window.prompt("Secret admin password?") ?? "";
 
     try {
       const body = await fetch("/api/login", {
@@ -827,10 +827,9 @@ export function MorphingLayout(props: Props) {
         }),
       }).then((r) => r.json());
 
-      if (body?.ok && body?.access_token) {
-        token = String(body.access_token);
-        sessionStorage.setItem("token", token);
-        return token;
+      if (body?.ok) {
+        getLocalStorage().setItem("password", password);
+        return password;
       }
     } catch {}
 
@@ -964,8 +963,8 @@ export function MorphingLayout(props: Props) {
             e.preventDefault();
             e.stopPropagation();
 
-            const token = await authenticate();
-            if (!token) {
+            const password = await authenticate();
+            if (!password) {
               return;
             }
 
@@ -980,7 +979,7 @@ export function MorphingLayout(props: Props) {
                       "content-type": "application/json",
                     },
                     body: JSON.stringify({
-                      token,
+                      password,
                       page: {
                         ...currentPage,
                         content: currentPage.lines.slice(3).join("\n"),
@@ -1041,8 +1040,8 @@ export function MorphingLayout(props: Props) {
                   .trim();
 
                 if (newPageTitle.length > 0) {
-                  const token = await authenticate();
-                  if (!token) {
+                  const password = await authenticate();
+                  if (!password) {
                     return;
                   }
 
@@ -1080,7 +1079,7 @@ export function MorphingLayout(props: Props) {
                             "content-type": "application/json",
                           },
                           body: JSON.stringify({
-                            token,
+                            password,
                             title: newPageTitle,
                           }),
                         }).then((r) => r.json());

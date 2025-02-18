@@ -35,7 +35,7 @@ export type Data = {
   links: Link[];
 };
 
-const client = createDirectus<Schema>("https://data.klve.nl")
+const publicClient = createDirectus<Schema>("https://data.klve.nl")
   .with(authentication("json"))
   .with(graphql());
 
@@ -48,20 +48,26 @@ function contentToLines(slug: string, title: string, content: string) {
   ];
 }
 
-export async function doLogin(password: string): Promise<{
-  access_token: string;
-}> {
+export async function login(password: string): Promise<typeof publicClient> {
+  const client = createDirectus<Schema>("https://data.klve.nl")
+    .with(authentication("json"))
+    .with(graphql());
+
   const res = await client.login("admin@asciirecip.es", password);
   if (!res.access_token) {
     throw new Error("Could not log in");
   }
 
-  return {
-    access_token: res.access_token,
-  };
+  return client;
 }
 
-export async function createPage(slug: string, title: string): Promise<Page> {
+export async function createPage(
+  password: string,
+  slug: string,
+  title: string
+): Promise<Page> {
+  const client = await login(password);
+
   const result = await client.query<{ page: ModelAsciiPage }>(
     `
       mutation ($data: create_ascii_pages_input!) {
@@ -91,11 +97,14 @@ export async function createPage(slug: string, title: string): Promise<Page> {
 }
 
 export async function updatePage(
+  password: string,
   id: string,
   slug: string,
   title: string,
   content: string
 ): Promise<Page> {
+  const client = await login(password);
+
   const result = await client.query<{ page: ModelAsciiPage }>(
     `
       mutation ($id: ID!, $data: update_ascii_pages_input!) {
@@ -126,7 +135,7 @@ export async function updatePage(
 }
 
 async function getPages() {
-  const result = await client.query<{ ascii_pages: ModelAsciiPage[] }>(`
+  const result = await publicClient.query<{ ascii_pages: ModelAsciiPage[] }>(`
     query {
       ascii_pages {
         id
@@ -150,7 +159,7 @@ async function getPages() {
 }
 
 async function getLinks() {
-  const result = await client.query<{ ascii_links: ModelAsciiLink[] }>(`
+  const result = await publicClient.query<{ ascii_links: ModelAsciiLink[] }>(`
     query {
       ascii_links {
         id
