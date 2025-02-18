@@ -1,4 +1,4 @@
-import { createDirectus, graphql } from "@directus/sdk";
+import { authentication, createDirectus, graphql } from "@directus/sdk";
 
 type ModelAsciiPage = {
   id: string;
@@ -35,9 +35,9 @@ export type Data = {
   links: Link[];
 };
 
-const client = createDirectus<Schema>("https://data.klve.nl/graphql").with(
-  graphql()
-);
+const client = createDirectus<Schema>("https://data.klve.nl")
+  .with(authentication("json"))
+  .with(graphql());
 
 function contentToLines(slug: string, title: string, content: string) {
   return [
@@ -46,6 +46,19 @@ function contentToLines(slug: string, title: string, content: string) {
     "",
     ...content.replace(/^\n*/, "").split("\n"),
   ];
+}
+
+export async function doLogin(password: string): Promise<{
+  access_token: string;
+}> {
+  const res = await client.login("admin@asciirecip.es", password);
+  if (!res.access_token) {
+    throw new Error("Could not log in");
+  }
+
+  return {
+    access_token: res.access_token,
+  };
 }
 
 export async function createPage(slug: string, title: string): Promise<Page> {

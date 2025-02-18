@@ -227,6 +227,64 @@ function addNewPageModal({
   };
 }
 
+function askPasswordModal({
+  currentPage,
+  onClose,
+  onContinue,
+}: {
+  currentPage: Page;
+  onClose: () => void;
+  onContinue: () => void;
+}): Modal {
+  const lines = padAround(
+    String.raw`
+╭──────────────────────────────────────╮
+│ ░░░░░░░░░░░░░ Password ░░░░░░░░░░░░░ │
+├──────────────────────────────────────┤
+│                                      │
+│ What's the magic admin password?     │
+│ ┌──────────────────────────────────┐ │
+│ │                                  │ │
+│ └──────────────────────────────────┘ │
+│                                      │
+│       [CONTINUE]      [CANCEL]       │
+╰──────────────────────────────────────╯`
+      .trim()
+      .split("\n")
+  );
+
+  const height = lines.length;
+  const width = lines[0].length;
+
+  return {
+    lines: pasteAt(blur(currentPage.lines), { c: 13, r: 8 }, lines),
+    links: {
+      ["[CANCEL]"]: onClose,
+      ["[CONTINUE]"]: onContinue,
+    },
+    escapeBounds: {
+      cmin: 13 + 1,
+      rmin: 8,
+      cmax: 13 + width - 1,
+      rmax: 8 + height - 1,
+    },
+    allowEditing: {
+      cmin: 13 + 5,
+      rmin: 8 + 6,
+      cmax: 13 + 37,
+      rmax: 8 + 6,
+    },
+    startWithSelections: [
+      {
+        caret: {
+          r: 8 + 6,
+          c: 13 + 5 + 0,
+        },
+      },
+    ],
+  };
+}
+
 function addLinkModal({
   currentPage,
   onClose,
@@ -749,10 +807,85 @@ export function MorphingLayout(props: Props) {
     });
   }, [setSelections, makeEdit]);
 
+  const authenticate = useCallback(async () => {
+    let token = sessionStorage.getItem("token") ?? "";
+
+    if (token) {
+      return token;
+    }
+
+    const password = window.prompt("Secret admin password?");
+
+    try {
+      const body = await fetch("/api/login", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          password,
+        }),
+      }).then((r) => r.json());
+
+      if (body?.ok && body?.access_token) {
+        token = String(body.access_token);
+        sessionStorage.setItem("token", token);
+        return token;
+      }
+    } catch {}
+
+    window.alert("Sorry, that's not correct.");
+
+    // const authenticated = await new Promise((resolve, reject) => {
+    //   openModal(
+    //     askPasswordModal({
+    //       currentPage,
+    //       onClose() {
+    //         resolve(false);
+    //         closeModal();
+    //       },
+    //       async onContinue() {
+    //         // suuuper hacky way of getting data out of react's setState :P
+    //         const password = await new Promise<string>((resolve) => {
+    //           setState((s) => {
+    //             const lines = s.modal?.lines ?? [];
+    //             const row = lines[8 + 6] ?? "";
+    //             const password = row.slice(13 + 5, 13 + 37).trim();
+
+    //             setTimeout(() => resolve(password), 0);
+
+    //             return s;
+    //           });
+    //         });
+
+    //         const body = await fetch("/api/login", {
+    //           method: "POST",
+    //           headers: {
+    //             "content-type": "application/json",
+    //           },
+    //           body: JSON.stringify({
+    //             password,
+    //           }),
+    //         }).then((r) => r.json());
+
+    //         if (body?.ok && body?.access_token) {
+    //           resolve(true);
+    //         } else {
+    //           resolve(false);
+    //         }
+
+    //         resolve(true);
+    //         closeModal();
+    //       },
+    //     })
+    //   );
+    // });
+  }, []);
+
   useEffect(() => {
     const currentPage = pageWithEdits ?? page;
 
-    return onEvent(window, "keydown", (e) => {
+    return onEvent(window, "keydown", async (e) => {
       switch (e.key) {
         case "ArrowUp": {
           if (e.altKey) {
@@ -828,6 +961,14 @@ export function MorphingLayout(props: Props) {
         }
         case "s": {
           if (e.metaKey || e.ctrlKey) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const token = await authenticate();
+            if (!token) {
+              return;
+            }
+
             openModal(
               createSaveModal({
                 currentPage,
@@ -839,6 +980,7 @@ export function MorphingLayout(props: Props) {
                       "content-type": "application/json",
                     },
                     body: JSON.stringify({
+                      token,
                       page: {
                         ...currentPage,
                         content: currentPage.lines.slice(3).join("\n"),
@@ -861,8 +1003,6 @@ export function MorphingLayout(props: Props) {
                 },
               })
             );
-            e.preventDefault();
-            e.stopPropagation();
           }
           break;
         }
@@ -901,6 +1041,11 @@ export function MorphingLayout(props: Props) {
                   .trim();
 
                 if (newPageTitle.length > 0) {
+                  const token = await authenticate();
+                  if (!token) {
+                    return;
+                  }
+
                   openModal(
                     addNewPageModal({
                       currentPage,
@@ -935,6 +1080,7 @@ export function MorphingLayout(props: Props) {
                             "content-type": "application/json",
                           },
                           body: JSON.stringify({
+                            token,
                             title: newPageTitle,
                           }),
                         }).then((r) => r.json());
