@@ -1,7 +1,7 @@
 {
   "name": "asciirecip.es",
   "private": true,
-  "version": "1.0.1",
+  "version": "1.0.2",
   "author": "Kelley van Evert <hello@kelleyvanevert.nl>",
   "license": "MIT",
   "scripts": {
