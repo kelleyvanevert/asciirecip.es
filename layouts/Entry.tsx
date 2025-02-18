@@ -1,6 +1,6 @@
 import Head from "next/head";
 import { useCallback, useEffect, useState } from "react";
-import { Data, Page } from "../lib/recipes";
+import { Data, getData, Page } from "../lib/recipes";
 import { useParams } from "next/navigation";
 import { MorphingLayout } from "./MorphingLayout";
 
@@ -10,11 +10,7 @@ export function Entry() {
   const params = useParams();
 
   const refetch = useCallback(async () => {
-    const body = await fetch("/api/data").then((r) => r.json());
-
-    if (body?.result) {
-      setData(body.result);
-    }
+    setData(await getData());
   }, []);
 
   useEffect(() => {

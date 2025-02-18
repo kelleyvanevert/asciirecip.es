@@ -4,7 +4,15 @@ import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import Head from "next/head";
 import Link from "next/link";
 import { sandstorm, dissolve, asciiMorph, forModal } from "./morph_effects";
-import { Data, Page } from "../lib/recipes";
+import {
+  client,
+  createPage,
+  Data,
+  isAuthenticated,
+  login,
+  Page,
+  updatePage,
+} from "../lib/recipes";
 import { callEach, onEvent } from "../lib/onEvent";
 import {
   Caret,
@@ -808,32 +816,19 @@ export function MorphingLayout(props: Props) {
   }, [setSelections, makeEdit]);
 
   const authenticate = useCallback(async () => {
-    let password = getLocalStorage().getItem("password") ?? "";
-
-    if (password) {
-      return password;
+    if (isAuthenticated) {
+      return true;
     }
 
-    password = window.prompt("Secret admin password?") ?? "";
+    const password = window.prompt("Secret admin password?") ?? "";
 
-    try {
-      const body = await fetch("/api/login", {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({
-          password,
-        }),
-      }).then((r) => r.json());
+    const ok = await login(password);
 
-      if (body?.ok) {
-        getLocalStorage().setItem("password", password);
-        return password;
-      }
-    } catch {}
+    if (!ok) {
+      window.alert("Sorry, that's not correct.");
+    }
 
-    window.alert("Sorry, that's not correct.");
+    return ok;
 
     // const authenticated = await new Promise((resolve, reject) => {
     //   openModal(
@@ -963,8 +958,8 @@ export function MorphingLayout(props: Props) {
             e.preventDefault();
             e.stopPropagation();
 
-            const password = await authenticate();
-            if (!password) {
+            const ok = await authenticate();
+            if (!ok) {
               return;
             }
 
@@ -973,32 +968,23 @@ export function MorphingLayout(props: Props) {
                 currentPage,
                 onClose: closeModal,
                 async onSave() {
-                  const body = await fetch("/api/save", {
-                    method: "POST",
-                    headers: {
-                      "content-type": "application/json",
-                    },
-                    body: JSON.stringify({
-                      password,
-                      page: {
-                        ...currentPage,
-                        content: currentPage.lines.slice(3).join("\n"),
-                      },
-                    }),
-                  }).then((r) => r.json());
+                  const updatedPage = await updatePage(
+                    currentPage.id,
+                    currentPage.slug,
+                    currentPage.title,
+                    currentPage.lines.slice(3).join("\n")
+                  );
 
-                  if (body?.ok && body?.result) {
-                    removeLocallySavedPageWithEdits(page.slug);
-                    setState((state) => {
-                      return {
-                        ...state,
-                        page: body.result,
-                        pageWithEdits: undefined,
-                      };
-                    });
-                    closeModal();
-                    props.refetch();
-                  }
+                  removeLocallySavedPageWithEdits(page.slug);
+                  setState((state) => {
+                    return {
+                      ...state,
+                      page: updatedPage,
+                      pageWithEdits: undefined,
+                    };
+                  });
+                  closeModal();
+                  props.refetch();
                 },
               })
             );
@@ -1040,8 +1026,8 @@ export function MorphingLayout(props: Props) {
                   .trim();
 
                 if (newPageTitle.length > 0) {
-                  const password = await authenticate();
-                  if (!password) {
+                  const ok = await authenticate();
+                  if (!ok) {
                     return;
                   }
 
@@ -1073,21 +1059,15 @@ export function MorphingLayout(props: Props) {
                           return;
                         }
 
-                        const body = await fetch("/api/new", {
-                          method: "POST",
-                          headers: {
-                            "content-type": "application/json",
-                          },
-                          body: JSON.stringify({
-                            password,
-                            title: newPageTitle,
-                          }),
-                        }).then((r) => r.json());
+                        const slug = newPageTitle
+                          .toLocaleLowerCase()
+                          .replace(/[ -]/g, "_")
+                          .replace(/[^a-zA-Z0-9_]/g, "");
 
-                        if (body?.ok && body?.result) {
-                          closeModal();
-                          props.refetch();
-                        }
+                        const newPage = await createPage(slug, newPageTitle);
+
+                        closeModal();
+                        props.refetch();
                       },
                     })
                   );

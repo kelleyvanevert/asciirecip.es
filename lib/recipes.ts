@@ -35,9 +35,11 @@ export type Data = {
   links: Link[];
 };
 
-const publicClient = createDirectus<Schema>("https://data.klve.nl")
+export const client = ((globalThis as any).client = createDirectus<Schema>(
+  "https://data.klve.nl"
+)
   .with(authentication("json"))
-  .with(graphql());
+  .with(graphql()));
 
 function contentToLines(slug: string, title: string, content: string) {
   return [
@@ -48,26 +50,32 @@ function contentToLines(slug: string, title: string, content: string) {
   ];
 }
 
-export async function login(password: string): Promise<typeof publicClient> {
-  const client = createDirectus<Schema>("https://data.klve.nl")
-    .with(authentication("json"))
-    .with(graphql());
+export let isAuthenticated = false;
 
-  const res = await client.login("admin@asciirecip.es", password);
-  if (!res.access_token) {
-    throw new Error("Could not log in");
+export async function login(password: string) {
+  try {
+    const res = await client.login("admin@asciirecip.es", password);
+    if (!res.access_token) {
+      throw new Error("Could not log in");
+    }
+
+    isAuthenticated = true;
+    return true;
+  } catch {
+    client.logout();
+    isAuthenticated = false;
+    return false;
   }
-
-  return client;
 }
 
-export async function createPage(
-  password: string,
-  slug: string,
-  title: string
-): Promise<Page> {
-  const client = await login(password);
+if ((globalThis?.localStorage as any)?.getItem) {
+  let savedPassword = globalThis?.localStorage.getItem("password");
+  if (savedPassword) {
+    login(savedPassword);
+  }
+}
 
+export async function createPage(slug: string, title: string): Promise<Page> {
   const result = await client.query<{ page: ModelAsciiPage }>(
     `
       mutation ($data: create_ascii_pages_input!) {
@@ -97,14 +105,11 @@ export async function createPage(
 }
 
 export async function updatePage(
-  password: string,
   id: string,
   slug: string,
   title: string,
   content: string
 ): Promise<Page> {
-  const client = await login(password);
-
   const result = await client.query<{ page: ModelAsciiPage }>(
     `
       mutation ($id: ID!, $data: update_ascii_pages_input!) {
@@ -135,7 +140,7 @@ export async function updatePage(
 }
 
 async function getPages() {
-  const result = await publicClient.query<{ ascii_pages: ModelAsciiPage[] }>(`
+  const result = await client.query<{ ascii_pages: ModelAsciiPage[] }>(`
     query {
       ascii_pages {
         id
@@ -159,7 +164,7 @@ async function getPages() {
 }
 
 async function getLinks() {
-  const result = await publicClient.query<{ ascii_links: ModelAsciiLink[] }>(`
+  const result = await client.query<{ ascii_links: ModelAsciiLink[] }>(`
     query {
       ascii_links {
         id
