@@ -4,15 +4,7 @@ import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import Head from "next/head";
 import Link from "next/link";
 import { sandstorm, dissolve, asciiMorph, forModal } from "./morph_effects";
-import {
-  client,
-  createPage,
-  Data,
-  isAuthenticated,
-  login,
-  Page,
-  updatePage,
-} from "../lib/recipes";
+import { createPage, Data, Page } from "../lib/recipes";
 import { callEach, onEvent } from "../lib/onEvent";
 import {
   Caret,
@@ -31,7 +23,7 @@ import {
   editWithinBounds,
   inBounds,
 } from "../lib/text";
-import { useKeyPressed } from "../lib/useKeyPressed";
+// import { useKeyPressed } from "../lib/useKeyPressed";
 import { useDarkMode } from "../lib/useDarkMode";
 import { blur, padAround } from "./morph_effects/lib";
 
@@ -80,96 +72,96 @@ function saveLocalPageWithEdits(page: Page) {
   );
 }
 
-function removeLocallySavedPageWithEdits(slug: string) {
-  getLocalStorage().removeItem(getLocallySavedPageWithEditsKey(slug));
-}
+// function removeLocallySavedPageWithEdits(slug: string) {
+//   getLocalStorage().removeItem(getLocallySavedPageWithEditsKey(slug));
+// }
 
-function createDiscardChangesModal({
-  currentPage,
-  onClose,
-  onDiscard,
-}: {
-  currentPage: Page;
-  onClose: () => void;
-  onDiscard: () => void;
-}): Modal {
-  const lines = padAround(
-    String.raw`
-╭──────────────────────────────────────╮
-│ ░░░░░░░░░ Discard changes? ░░░░░░░░░ │
-├──────────────────────────────────────┤
-│                                      │
-│       Do you want to discard         │
-│      all changes to this page?       │
-│                                      │
-│              Continue?               │
-│                                      │
-│       [DISCARD]       [CANCEL]       │
-╰──────────────────────────────────────╯`
-      .trim()
-      .split("\n"),
-  );
+// function createDiscardChangesModal({
+//   currentPage,
+//   onClose,
+//   onDiscard,
+// }: {
+//   currentPage: Page;
+//   onClose: () => void;
+//   onDiscard: () => void;
+// }): Modal {
+//   const lines = padAround(
+//     String.raw`
+// ╭──────────────────────────────────────╮
+// │ ░░░░░░░░░ Discard changes? ░░░░░░░░░ │
+// ├──────────────────────────────────────┤
+// │                                      │
+// │       Do you want to discard         │
+// │      all changes to this page?       │
+// │                                      │
+// │              Continue?               │
+// │                                      │
+// │       [DISCARD]       [CANCEL]       │
+// ╰──────────────────────────────────────╯`
+//       .trim()
+//       .split("\n"),
+//   );
 
-  const height = lines.length;
-  const width = lines[0].length;
+//   const height = lines.length;
+//   const width = lines[0].length;
 
-  return {
-    lines: pasteAt(blur(currentPage.lines), { c: 13, r: 8 }, lines),
-    escapeBounds: {
-      cmin: 13 + 1,
-      rmin: 8,
-      cmax: 13 + width - 1,
-      rmax: 8 + height - 1,
-    },
-    links: {
-      "[CANCEL]": onClose,
-      "[DISCARD]": onDiscard,
-    },
-  };
-}
+//   return {
+//     lines: pasteAt(blur(currentPage.lines), { c: 13, r: 8 }, lines),
+//     escapeBounds: {
+//       cmin: 13 + 1,
+//       rmin: 8,
+//       cmax: 13 + width - 1,
+//       rmax: 8 + height - 1,
+//     },
+//     links: {
+//       "[CANCEL]": onClose,
+//       "[DISCARD]": onDiscard,
+//     },
+//   };
+// }
 
-function createSaveModal({
-  currentPage,
-  onClose,
-  onSave,
-}: {
-  currentPage: Page;
-  onClose: () => void;
-  onSave: () => void;
-}): Modal {
-  const lines = padAround(
-    String.raw`
-╭──────────────────────────────────────╮
-│ ░░░░░░░░░░ Save changes? ░░░░░░░░░░░ │
-├──────────────────────────────────────┤
-│                                      │
-│    Do you want to save this page?    │
-│                                      │
-│              Continue?               │
-│                                      │
-│        [SAVE]        [CANCEL]        │
-╰──────────────────────────────────────╯`
-      .trim()
-      .split("\n"),
-  );
+// function createSaveModal({
+//   currentPage,
+//   onClose,
+//   onSave,
+// }: {
+//   currentPage: Page;
+//   onClose: () => void;
+//   onSave: () => void;
+// }): Modal {
+//   const lines = padAround(
+//     String.raw`
+// ╭──────────────────────────────────────╮
+// │ ░░░░░░░░░░ Save changes? ░░░░░░░░░░░ │
+// ├──────────────────────────────────────┤
+// │                                      │
+// │    Do you want to save this page?    │
+// │                                      │
+// │              Continue?               │
+// │                                      │
+// │        [SAVE]        [CANCEL]        │
+// ╰──────────────────────────────────────╯`
+//       .trim()
+//       .split("\n"),
+//   );
 
-  const height = lines.length;
-  const width = lines[0].length;
+//   const height = lines.length;
+//   const width = lines[0].length;
 
-  return {
-    lines: pasteAt(blur(currentPage.lines), { c: 13, r: 8 }, lines),
-    escapeBounds: {
-      cmin: 13 + 1,
-      rmin: 8,
-      cmax: 13 + width - 1,
-      rmax: 8 + height - 1,
-    },
-    links: {
-      "[CANCEL]": onClose,
-      "[SAVE]": onSave,
-    },
-  };
-}
+//   return {
+//     lines: pasteAt(blur(currentPage.lines), { c: 13, r: 8 }, lines),
+//     escapeBounds: {
+//       cmin: 13 + 1,
+//       rmin: 8,
+//       cmax: 13 + width - 1,
+//       rmax: 8 + height - 1,
+//     },
+//     links: {
+//       "[CANCEL]": onClose,
+//       "[SAVE]": onSave,
+//     },
+//   };
+// }
 
 function addNewPageModal({
   currentPage,
@@ -235,63 +227,63 @@ function addNewPageModal({
   };
 }
 
-function askPasswordModal({
-  currentPage,
-  onClose,
-  onContinue,
-}: {
-  currentPage: Page;
-  onClose: () => void;
-  onContinue: () => void;
-}): Modal {
-  const lines = padAround(
-    String.raw`
-╭──────────────────────────────────────╮
-│ ░░░░░░░░░░░░░ Password ░░░░░░░░░░░░░ │
-├──────────────────────────────────────┤
-│                                      │
-│ What's the magic admin password?     │
-│ ┌──────────────────────────────────┐ │
-│ │                                  │ │
-│ └──────────────────────────────────┘ │
-│                                      │
-│       [CONTINUE]      [CANCEL]       │
-╰──────────────────────────────────────╯`
-      .trim()
-      .split("\n"),
-  );
+// function askPasswordModal({
+//   currentPage,
+//   onClose,
+//   onContinue,
+// }: {
+//   currentPage: Page;
+//   onClose: () => void;
+//   onContinue: () => void;
+// }): Modal {
+//   const lines = padAround(
+//     String.raw`
+// ╭──────────────────────────────────────╮
+// │ ░░░░░░░░░░░░░ Password ░░░░░░░░░░░░░ │
+// ├──────────────────────────────────────┤
+// │                                      │
+// │ What's the magic admin password?     │
+// │ ┌──────────────────────────────────┐ │
+// │ │                                  │ │
+// │ └──────────────────────────────────┘ │
+// │                                      │
+// │       [CONTINUE]      [CANCEL]       │
+// ╰──────────────────────────────────────╯`
+//       .trim()
+//       .split("\n"),
+//   );
 
-  const height = lines.length;
-  const width = lines[0].length;
+//   const height = lines.length;
+//   const width = lines[0].length;
 
-  return {
-    lines: pasteAt(blur(currentPage.lines), { c: 13, r: 8 }, lines),
-    links: {
-      ["[CANCEL]"]: onClose,
-      ["[CONTINUE]"]: onContinue,
-    },
-    escapeBounds: {
-      cmin: 13 + 1,
-      rmin: 8,
-      cmax: 13 + width - 1,
-      rmax: 8 + height - 1,
-    },
-    allowEditing: {
-      cmin: 13 + 5,
-      rmin: 8 + 6,
-      cmax: 13 + 37,
-      rmax: 8 + 6,
-    },
-    startWithSelections: [
-      {
-        caret: {
-          r: 8 + 6,
-          c: 13 + 5 + 0,
-        },
-      },
-    ],
-  };
-}
+//   return {
+//     lines: pasteAt(blur(currentPage.lines), { c: 13, r: 8 }, lines),
+//     links: {
+//       ["[CANCEL]"]: onClose,
+//       ["[CONTINUE]"]: onContinue,
+//     },
+//     escapeBounds: {
+//       cmin: 13 + 1,
+//       rmin: 8,
+//       cmax: 13 + width - 1,
+//       rmax: 8 + height - 1,
+//     },
+//     allowEditing: {
+//       cmin: 13 + 5,
+//       rmin: 8 + 6,
+//       cmax: 13 + 37,
+//       rmax: 8 + 6,
+//     },
+//     startWithSelections: [
+//       {
+//         caret: {
+//           r: 8 + 6,
+//           c: 13 + 5 + 0,
+//         },
+//       },
+//     ],
+//   };
+// }
 
 function addLinkModal({
   currentPage,
@@ -469,9 +461,9 @@ export function MorphingLayout(props: Props) {
   }>();
   const [isDrawingBoxes, setDrawingBoxes] = useState(false);
 
-  const altPressed = useKeyPressed("Alt");
-  const metaPressed = useKeyPressed("Meta");
-  const shiftPressed = useKeyPressed("Shift");
+  // const altPressed = useKeyPressed("Alt");
+  // const metaPressed = useKeyPressed("Meta");
+  // const shiftPressed = useKeyPressed("Shift");
 
   const setSelections = useCallback(
     (
@@ -737,7 +729,7 @@ export function MorphingLayout(props: Props) {
   );
 
   const moveCaretAndDrawBoxChar = useCallback(
-    (clear: boolean, dr: number, dc: number) => {
+    (_clear: boolean, dr: number, dc: number) => {
       setDrawingBoxes(true);
       setSelections((selection) => {
         const { caret, boxDrawingMode } = selection;
@@ -817,66 +809,66 @@ export function MorphingLayout(props: Props) {
     });
   }, [setSelections, makeEdit]);
 
-  const authenticate = useCallback(async () => {
-    if (isAuthenticated) {
-      return true;
-    }
+  // const authenticate = useCallback(async () => {
+  //   if (isAuthenticated) {
+  //     return true;
+  //   }
 
-    const password = window.prompt("Secret admin password?") ?? "";
+  //   const password = window.prompt("Secret admin password?") ?? "";
 
-    const ok = await login(password);
+  //   const ok = await login(password);
 
-    if (!ok) {
-      window.alert("Sorry, that's not correct.");
-    }
+  //   if (!ok) {
+  //     window.alert("Sorry, that's not correct.");
+  //   }
 
-    return ok;
+  //   return ok;
 
-    // const authenticated = await new Promise((resolve, reject) => {
-    //   openModal(
-    //     askPasswordModal({
-    //       currentPage,
-    //       onClose() {
-    //         resolve(false);
-    //         closeModal();
-    //       },
-    //       async onContinue() {
-    //         // suuuper hacky way of getting data out of react's setState :P
-    //         const password = await new Promise<string>((resolve) => {
-    //           setState((s) => {
-    //             const lines = s.modal?.lines ?? [];
-    //             const row = lines[8 + 6] ?? "";
-    //             const password = row.slice(13 + 5, 13 + 37).trim();
+  // const authenticated = await new Promise((resolve, reject) => {
+  //   openModal(
+  //     askPasswordModal({
+  //       currentPage,
+  //       onClose() {
+  //         resolve(false);
+  //         closeModal();
+  //       },
+  //       async onContinue() {
+  //         // suuuper hacky way of getting data out of react's setState :P
+  //         const password = await new Promise<string>((resolve) => {
+  //           setState((s) => {
+  //             const lines = s.modal?.lines ?? [];
+  //             const row = lines[8 + 6] ?? "";
+  //             const password = row.slice(13 + 5, 13 + 37).trim();
 
-    //             setTimeout(() => resolve(password), 0);
+  //             setTimeout(() => resolve(password), 0);
 
-    //             return s;
-    //           });
-    //         });
+  //             return s;
+  //           });
+  //         });
 
-    //         const body = await fetch("/api/login", {
-    //           method: "POST",
-    //           headers: {
-    //             "content-type": "application/json",
-    //           },
-    //           body: JSON.stringify({
-    //             password,
-    //           }),
-    //         }).then((r) => r.json());
+  //         const body = await fetch("/api/login", {
+  //           method: "POST",
+  //           headers: {
+  //             "content-type": "application/json",
+  //           },
+  //           body: JSON.stringify({
+  //             password,
+  //           }),
+  //         }).then((r) => r.json());
 
-    //         if (body?.ok && body?.access_token) {
-    //           resolve(true);
-    //         } else {
-    //           resolve(false);
-    //         }
+  //         if (body?.ok && body?.access_token) {
+  //           resolve(true);
+  //         } else {
+  //           resolve(false);
+  //         }
 
-    //         resolve(true);
-    //         closeModal();
-    //       },
-    //     })
-    //   );
-    // });
-  }, []);
+  //         resolve(true);
+  //         closeModal();
+  //       },
+  //     })
+  //   );
+  // });
+  // }, []);
 
   useEffect(() => {
     const currentPage = pageWithEdits ?? page;
@@ -1028,10 +1020,10 @@ export function MorphingLayout(props: Props) {
                   .trim();
 
                 if (newPageTitle.length > 0) {
-                  const ok = await authenticate();
-                  if (!ok) {
-                    return;
-                  }
+                  // const ok = await authenticate();
+                  // if (!ok) {
+                  //   return;
+                  // }
 
                   openModal(
                     addNewPageModal({
@@ -1066,7 +1058,7 @@ export function MorphingLayout(props: Props) {
                           .replace(/[ -]/g, "_")
                           .replace(/[^a-zA-Z0-9_]/g, "");
 
-                        const newPage = await createPage(slug, newPageTitle);
+                        await createPage(slug, newPageTitle);
 
                         closeModal();
                         props.refetch();
