@@ -1,0 +1,29 @@
+{
+  "ascii_links": [
+    {
+      "id": "36cdee1b-7ca8-4155-aba6-bf28035104b5",
+      "text": "Kelley",
+      "url": "https://klve.nl"
+    },
+    {
+      "id": "4903cbf7-755c-4ea7-a388-c3bd2b9d0303",
+      "text": "Fira Code",
+      "url": "https://github.com/tonsky/FiraCode"
+    },
+    {
+      "id": "884653f7-fe5e-44e3-a53e-dc0edafccde7",
+      "text": "WIP",
+      "url": "https://github.com/kelleyvanevert/asciirecip.es"
+    },
+    {
+      "id": "a478ff25-54ec-4147-8a48-f9bb2d7eea2d",
+      "text": "ASCII recipes",
+      "url": "/"
+    },
+    {
+      "id": "bd0e28a2-b09d-45dc-b213-cd04e1e0aa74",
+      "text": "Tim Holman's morphing effect",
+      "url": "https://tholman.com/post/ascii-morph/"
+    }
+  ]
+}

@@ -76,7 +76,7 @@ function getLocallySavedPageWithEdits(slug: string): undefined | Page {
 function saveLocalPageWithEdits(page: Page) {
   getLocalStorage().setItem(
     getLocallySavedPageWithEditsKey(page.slug),
-    JSON.stringify(page)
+    JSON.stringify(page),
   );
 }
 
@@ -107,7 +107,7 @@ function createDiscardChangesModal({
 │       [DISCARD]       [CANCEL]       │
 ╰──────────────────────────────────────╯`
       .trim()
-      .split("\n")
+      .split("\n"),
   );
 
   const height = lines.length;
@@ -150,7 +150,7 @@ function createSaveModal({
 │        [SAVE]        [CANCEL]        │
 ╰──────────────────────────────────────╯`
       .trim()
-      .split("\n")
+      .split("\n"),
   );
 
   const height = lines.length;
@@ -197,10 +197,10 @@ function addNewPageModal({
 │          [ADD]       [CANCEL]        │
 ╰──────────────────────────────────────╯`
         .trim()
-        .split("\n")
+        .split("\n"),
     ),
     { c: 5, r: 6 },
-    [newPageTitle]
+    [newPageTitle],
   );
 
   const height = lines.length;
@@ -258,7 +258,7 @@ function askPasswordModal({
 │       [CONTINUE]      [CANCEL]       │
 ╰──────────────────────────────────────╯`
       .trim()
-      .split("\n")
+      .split("\n"),
   );
 
   const height = lines.length;
@@ -314,7 +314,7 @@ function addLinkModal({
 │                [ADD]       [CANCEL]              │
 ╰──────────────────────────────────────────────────╯`
       .trim()
-      .split("\n")
+      .split("\n"),
   );
 
   const height = lines.length;
@@ -400,7 +400,7 @@ function unicodeCharsModal({
           },
         },
       ];
-    })
+    }),
   );
 
   const lines = padAround(box.trim().split("\n"));
@@ -478,9 +478,9 @@ export function MorphingLayout(props: Props) {
       action:
         | ((
             selection: Selection,
-            index: number
+            index: number,
           ) => Selection[] | Selection | undefined)
-        | Selection[]
+        | Selection[],
     ) => {
       setState((state) => {
         if (state.modal) {
@@ -496,7 +496,7 @@ export function MorphingLayout(props: Props) {
                 state.modalSelections
                   ?.flatMap(action)
                   .filter((s): s is Selection => !!s)
-                  .map((s) => normalizeSelection(s, allowSelection))
+                  .map((s) => normalizeSelection(s, allowSelection)),
               ),
             };
           } else {
@@ -514,7 +514,7 @@ export function MorphingLayout(props: Props) {
               state.selections
                 ?.flatMap(action)
                 .filter((s): s is Selection => !!s)
-                .map((s) => normalizeSelection(s, { rmin: 3 }))
+                .map((s) => normalizeSelection(s, { rmin: 3 })),
             ),
           };
         } else {
@@ -525,7 +525,7 @@ export function MorphingLayout(props: Props) {
         }
       });
     },
-    [setState]
+    [setState],
   );
 
   const addSelection = useCallback(
@@ -537,7 +537,7 @@ export function MorphingLayout(props: Props) {
         };
       });
     },
-    [setState]
+    [setState],
   );
 
   const makeEdit = useCallback(
@@ -563,7 +563,7 @@ export function MorphingLayout(props: Props) {
         const lines = editWithinBounds(
           editBounds,
           edit,
-          currPageWithEdits.lines
+          currPageWithEdits.lines,
         );
 
         if (!lines[0].includes(" (unsaved)")) {
@@ -583,7 +583,7 @@ export function MorphingLayout(props: Props) {
         };
       });
     },
-    [setState, editBounds]
+    [setState, editBounds],
   );
 
   useEffectPrev(
@@ -599,7 +599,7 @@ export function MorphingLayout(props: Props) {
 
         const { frames, duration } = randomEffect(
           prevPage.lines,
-          nextPage.lines
+          nextPage.lines,
         );
 
         if (!(globalThis as any).debug?.disableTransitions) {
@@ -618,7 +618,7 @@ export function MorphingLayout(props: Props) {
         });
       }
     },
-    [props.page, setState, setTransitioning]
+    [props.page, setState, setTransitioning],
   );
 
   useEffect(() => {
@@ -646,7 +646,7 @@ export function MorphingLayout(props: Props) {
 
       const { frames, duration } = forModal(
         state.modal.lines,
-        state.pageWithEdits?.lines ?? state.page.lines
+        state.pageWithEdits?.lines ?? state.page.lines,
       );
 
       if (!(globalThis as any).debug?.disableTransitions) {
@@ -688,7 +688,7 @@ export function MorphingLayout(props: Props) {
         };
       });
     },
-    [setState, closeModal, setTransitioning]
+    [setState, closeModal, setTransitioning],
   );
 
   const lines = modal?.lines ?? pageWithEdits?.lines ?? page.lines;
@@ -723,7 +723,9 @@ export function MorphingLayout(props: Props) {
         }
 
         return normalizeSelection({
-          anchor: !selectMode ? undefined : selection.anchor ?? selection.caret,
+          anchor: !selectMode
+            ? undefined
+            : (selection.anchor ?? selection.caret),
           caret: constrainCaret({
             r: selection.caret.r + dr,
             c: selection.caret.c + dc,
@@ -731,7 +733,7 @@ export function MorphingLayout(props: Props) {
         });
       });
     },
-    [setSelections, isDrawingBoxes, setDrawingBoxes]
+    [setSelections, isDrawingBoxes, setDrawingBoxes],
   );
 
   const moveCaretAndDrawBoxChar = useCallback(
@@ -759,7 +761,7 @@ export function MorphingLayout(props: Props) {
         };
       });
     },
-    [setSelections, setDrawingBoxes, maxCol, maxRow]
+    [setSelections, setDrawingBoxes, maxCol, maxRow],
   );
 
   const expandOrAddExtraCaret = useCallback(
@@ -803,7 +805,7 @@ export function MorphingLayout(props: Props) {
         }
       });
     },
-    [setSelections, moveCaret, isDrawingBoxes, setDrawingBoxes, maxCol, maxRow]
+    [setSelections, moveCaret, isDrawingBoxes, setDrawingBoxes, maxCol, maxRow],
   );
 
   const clearCurrentSelections = useCallback(() => {
@@ -953,72 +955,72 @@ export function MorphingLayout(props: Props) {
           e.stopPropagation();
           break;
         }
-        case "s": {
-          if (e.metaKey || e.ctrlKey) {
-            e.preventDefault();
-            e.stopPropagation();
+        // case "s": {
+        //   if (e.metaKey || e.ctrlKey) {
+        //     e.preventDefault();
+        //     e.stopPropagation();
 
-            const ok = await authenticate();
-            if (!ok) {
-              return;
-            }
+        //     const ok = await authenticate();
+        //     if (!ok) {
+        //       return;
+        //     }
 
-            openModal(
-              createSaveModal({
-                currentPage,
-                onClose: closeModal,
-                async onSave() {
-                  const updatedPage = await updatePage(
-                    currentPage.id,
-                    currentPage.slug,
-                    currentPage.title,
-                    currentPage.lines.slice(3).join("\n")
-                  );
+        //     openModal(
+        //       createSaveModal({
+        //         currentPage,
+        //         onClose: closeModal,
+        //         async onSave() {
+        //           const updatedPage = await updatePage(
+        //             currentPage.id,
+        //             currentPage.slug,
+        //             currentPage.title,
+        //             currentPage.lines.slice(3).join("\n")
+        //           );
 
-                  removeLocallySavedPageWithEdits(page.slug);
-                  setState((state) => {
-                    return {
-                      ...state,
-                      page: updatedPage,
-                      pageWithEdits: undefined,
-                    };
-                  });
-                  closeModal();
-                  props.refetch();
-                },
-              })
-            );
-          }
-          break;
-        }
-        case "d": {
-          if (e.metaKey || e.ctrlKey) {
-            openModal(
-              createDiscardChangesModal({
-                currentPage,
-                onClose: closeModal,
-                onDiscard() {
-                  removeLocallySavedPageWithEdits(currentPage.slug);
-                  setState((state) => {
-                    return {
-                      ...state,
-                      pageWithEdits: undefined,
-                    };
-                  });
-                  closeModal();
-                },
-              })
-            );
-            e.preventDefault();
-            e.stopPropagation();
-          }
-          break;
-        }
+        //           removeLocallySavedPageWithEdits(page.slug);
+        //           setState((state) => {
+        //             return {
+        //               ...state,
+        //               page: updatedPage,
+        //               pageWithEdits: undefined,
+        //             };
+        //           });
+        //           closeModal();
+        //           props.refetch();
+        //         },
+        //       })
+        //     );
+        //   }
+        //   break;
+        // }
+        // case "d": {
+        //   if (e.metaKey || e.ctrlKey) {
+        //     openModal(
+        //       createDiscardChangesModal({
+        //         currentPage,
+        //         onClose: closeModal,
+        //         onDiscard() {
+        //           removeLocallySavedPageWithEdits(currentPage.slug);
+        //           setState((state) => {
+        //             return {
+        //               ...state,
+        //               pageWithEdits: undefined,
+        //             };
+        //           });
+        //           closeModal();
+        //         },
+        //       }),
+        //     );
+        //     e.preventDefault();
+        //     e.stopPropagation();
+        //   }
+        //   break;
+        // }
         case "a": {
           if (e.metaKey || e.ctrlKey) {
             if (selections.length === 1) {
               const { top, left, height, width } = getSelectionBounds(
-                selections[0]
+                selections[0],
               );
               if (height === 1 && width > 0) {
                 const newPageTitle = lines[top]
@@ -1051,7 +1053,7 @@ export function MorphingLayout(props: Props) {
 
                               return s;
                             });
-                          }
+                          },
                         );
 
                         if (!newPageTitle) {
@@ -1069,7 +1071,7 @@ export function MorphingLayout(props: Props) {
                         closeModal();
                         props.refetch();
                       },
-                    })
+                    }),
                   );
                   e.preventDefault();
                   e.stopPropagation();
@@ -1088,7 +1090,7 @@ export function MorphingLayout(props: Props) {
                   addLinkModal({
                     currentPage,
                     onClose: closeModal,
-                  })
+                  }),
                 );
               }
             }
@@ -1103,7 +1105,7 @@ export function MorphingLayout(props: Props) {
               unicodeCharsModal({
                 currentPage,
                 onClose: closeModal,
-              })
+              }),
             );
             e.preventDefault();
             e.stopPropagation();
@@ -1168,7 +1170,7 @@ export function MorphingLayout(props: Props) {
         const textToCopy = lines
           .slice(top, top + height)
           .map((line) =>
-            line.padEnd(left + width, " ").slice(left, left + width)
+            line.padEnd(left + width, " ").slice(left, left + width),
           )
           .join("\n");
 
@@ -1364,7 +1366,7 @@ export function MorphingLayout(props: Props) {
                     links,
                     i,
                     pageHasLocalUnsavedEdits,
-                    !!state.modal
+                    !!state.modal,
                   ).map((token, i) => {
                     if (token.type === "text") {
                       return <span key={i}>{token.text}</span>;
@@ -1454,7 +1456,7 @@ function tokenizeLine(
   links: Record<string, LinkTo>,
   lineNo: number,
   pageHasLocalUnsavedEdits: boolean,
-  hasOpenModal: boolean
+  hasOpenModal: boolean,
 ): Token[] {
   const foundLink = Object.entries(links)
     .map(([text, to]) => {
@@ -1478,7 +1480,7 @@ function tokenizeLine(
         links,
         lineNo,
         pageHasLocalUnsavedEdits,
-        hasOpenModal
+        hasOpenModal,
       ),
     ];
   }

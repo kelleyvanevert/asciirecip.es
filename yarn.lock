@@ -2,11 +2,6 @@
 # yarn lockfile v1
 
 
-"@directus/sdk@^19.0.1":
-  version "19.0.1"
-  resolved "https://registry.yarnpkg.com/@directus/sdk/-/sdk-19.0.1.tgz#06d154a41499b79b068f18992a7e5f310f0b242c"
-  integrity sha512-6KwWedA/vxrMN2aRm5L52TEgB+42vkz0Ae8kwOitHuBPT4VWtUNOXenzaHnZyXyNrEgh/VBLJ36f3UEe3b/Wfw==
-
 "@emnapi/runtime@^1.2.0":
   version "1.3.1"
   resolved "https://registry.yarnpkg.com/@emnapi/runtime/-/runtime-1.3.1.tgz#0fcaa575afc31f455fd33534c19381cfce6c6f60"

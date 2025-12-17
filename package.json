@@ -11,7 +11,6 @@
     "start": "next start"
   },
   "dependencies": {
-    "@directus/sdk": "^19.0.1",
     "dotenv-flow": "^4.1.0",
     "gray-matter": "^4.0.3",
     "next": "^15.0.3",

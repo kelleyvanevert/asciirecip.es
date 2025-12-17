@@ -1,4 +1,5 @@
-import { authentication, createDirectus, graphql } from "@directus/sdk";
+import LINKS from "../data/links.json";
+import PAGES from "../data/pages.json";
 
 type ModelAsciiPage = {
   id: string;
@@ -13,10 +14,10 @@ type ModelAsciiLink = {
   url: string;
 };
 
-type Schema = {
-  ascii_links: ModelAsciiLink[];
-  ascii_pages: ModelAsciiPage[];
-};
+// type Schema = {
+//   ascii_links: ModelAsciiLink[];
+//   ascii_pages: ModelAsciiPage[];
+// };
 
 export type Page = {
   id: string;
@@ -35,12 +36,6 @@ export type Data = {
   links: Link[];
 };
 
-export const client = ((globalThis as any).client = createDirectus<Schema>(
-  "https://data.klve.nl"
-)
-  .with(authentication("json"))
-  .with(graphql()));
-
 function contentToLines(slug: string, title: string, content: string) {
   return [
     slug.startsWith("_") ? "ASCII recipes" : `ASCII recipes / ${title}`,
@@ -52,107 +47,101 @@ function contentToLines(slug: string, title: string, content: string) {
 
 export let isAuthenticated = false;
 
-export async function login(password: string) {
-  try {
-    const res = await client.login("admin@asciirecip.es", password);
-    if (!res.access_token) {
-      throw new Error("Could not log in");
-    }
-
-    isAuthenticated = true;
-    return true;
-  } catch {
-    client.logout();
-    isAuthenticated = false;
-    return false;
-  }
-}
-
-if ((globalThis?.localStorage as any)?.getItem) {
-  let savedPassword = globalThis?.localStorage.getItem("password");
-  if (savedPassword) {
-    login(savedPassword);
-  }
-}
-
 export async function createPage(slug: string, title: string): Promise<Page> {
-  const result = await client.query<{ page: ModelAsciiPage }>(
-    `
-      mutation ($data: create_ascii_pages_input!) {
-        page: create_ascii_pages_item(data: $data) {
-          id
-          slug
-          title
-          content
-        }
-      }
-    `,
-    {
-      data: {
-        slug,
-        title,
-        content: "",
-      },
-    }
-  );
+  window.alert("I'm afraid this is no longer possible... :|");
 
-  const page = result.page;
+  const page = {
+    id: Math.random().toString(16).slice(2),
+    slug,
+    title,
+    content: "",
+  };
 
   return {
     ...page,
     lines: contentToLines(page.slug, page.title, page.content),
   };
+
+  // const result = await client.query<{ page: ModelAsciiPage }>(
+  //   `
+  //     mutation ($data: create_ascii_pages_input!) {
+  //       page: create_ascii_pages_item(data: $data) {
+  //         id
+  //         slug
+  //         title
+  //         content
+  //       }
+  //     }
+  //   `,
+  //   {
+  //     data: {
+  //       slug,
+  //       title,
+  //       content: "",
+  //     },
+  //   },
+  // );
+
+  // const page = result.page;
+
+  // return {
+  //   ...page,
+  //   lines: contentToLines(page.slug, page.title, page.content),
+  // };
 }
 
 export async function updatePage(
   id: string,
   slug: string,
   title: string,
-  content: string
+  content: string,
 ): Promise<Page> {
-  const result = await client.query<{ page: ModelAsciiPage }>(
-    `
-      mutation ($id: ID!, $data: update_ascii_pages_input!) {
-        page: update_ascii_pages_item(id: $id, data: $data) {
-          id
-          slug
-          title
-          content
-        }
-      }
-    `,
-    {
-      id,
-      data: {
-        slug,
-        title,
-        content,
-      },
-    }
-  );
+  // const result = await client.query<{ page: ModelAsciiPage }>(
+  //   `
+  //     mutation ($id: ID!, $data: update_ascii_pages_input!) {
+  //       page: update_ascii_pages_item(id: $id, data: $data) {
+  //         id
+  //         slug
+  //         title
+  //         content
+  //       }
+  //     }
+  //   `,
+  //   {
+  //     id,
+  //     data: {
+  //       slug,
+  //       title,
+  //       content,
+  //     },
+  //   },
+  // );
 
-  const page = result.page;
+  // const page = result.page;
 
   return {
-    ...page,
-    lines: contentToLines(page.slug, page.title, page.content),
+    id,
+    slug,
+    title,
+    // content,
+    lines: contentToLines(slug, title, content),
   };
 }
 
 async function getPages() {
-  const result = await client.query<{ ascii_pages: ModelAsciiPage[] }>(`
-    query {
-      ascii_pages {
-        id
-        slug
-        title
-        content
-      }
-    }
-  `);
+  // const result = await client.query<{ ascii_pages: ModelAsciiPage[] }>(`
+  //   query {
+  //     ascii_pages {
+  //       id
+  //       slug
+  //       title
+  //       content
+  //     }
+  //   }
+  // `);
 
   return (
-    result.ascii_pages
+    PAGES.ascii_pages
       // .filter((r) => !r.slug.startsWith("_"))
       .map((r) => {
         return {
@@ -164,17 +153,18 @@ async function getPages() {
 }
 
 async function getLinks() {
-  const result = await client.query<{ ascii_links: ModelAsciiLink[] }>(`
-    query {
-      ascii_links {
-        id
-        text
-        url
-      }
-    }
-  `);
+  // const result = await client.query<{ ascii_links: ModelAsciiLink[] }>(`
+  //   query {
+  //     ascii_links {
+  //       id
+  //       text
+  //       url
+  //     }
+  //   }
+  // `);
 
-  return result.ascii_links;
+  // return result.ascii_links;
+  return LINKS.ascii_links;
 }
 
 export async function getData(): Promise<Data> {
